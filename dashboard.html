@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ผลสอบ | สำหรับอาจารย์</title>
+<style>
+  :root{--ink:#1a2e22;--paper:#f6f4ec;--card:#fff;--leaf:#2f7d4f;--leaf-dark:#235d3b;
+    --leaf-soft:#e5f0e8;--clay:#c65d3b;--amber:#d99a2b;--line:#d8d4c4;--muted:#6b7566;
+    --shadow:0 2px 8px rgba(30,50,35,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Noto Sans Thai","Sarabun",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--paper);color:var(--ink);line-height:1.6;padding:20px 16px 60px;}
+  .wrap{max-width:1000px;margin:0 auto;}
+  .band{background:linear-gradient(160deg,var(--leaf) 0%,var(--leaf-dark) 100%);color:#fff;
+    border-radius:16px;padding:24px 22px;margin-bottom:20px;box-shadow:var(--shadow);}
+  .band h1{font-size:22px;font-weight:700;} .band p{font-size:13.5px;opacity:.9;margin-top:6px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .card h2{font-size:17px;margin-bottom:12px;}
+  label{display:block;font-size:14px;font-weight:600;margin-bottom:6px;}
+  input[type=text],input[type=password]{width:100%;font-size:15px;padding:11px 14px;border:1.5px solid var(--line);
+    border-radius:10px;background:#fbfaf5;color:var(--ink);font-family:inherit;margin-bottom:12px;}
+  input:focus{outline:none;border-color:var(--leaf);}
+  .btn{display:inline-block;font-family:inherit;font-size:15px;font-weight:700;padding:12px 20px;border-radius:11px;
+    border:none;cursor:pointer;background:var(--leaf);color:#fff;transition:background .15s;}
+  .btn:hover{background:var(--leaf-dark);} .btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+  .btn.ghost{background:transparent;color:var(--leaf);border:1.5px solid var(--leaf);}
+  .btn.ghost:hover{background:var(--leaf-soft);}
+  .note{background:#fdf3e7;border:1px solid #f0d9b5;border-radius:10px;padding:12px 14px;font-size:13px;color:#8a5a1a;margin-bottom:14px;}
+  .err{color:var(--clay);font-size:13px;font-weight:600;min-height:18px;margin-bottom:8px;}
+  .hidden{display:none;}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 10px;text-align:center;box-shadow:var(--shadow);}
+  .stat .num{font-size:26px;font-weight:800;color:var(--leaf-dark);} .stat .lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+  @media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr);}}
+  .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .toolbar input{margin-bottom:0;flex:1;min-width:160px;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px;}
+  th{text-align:left;padding:10px 8px;border-bottom:2px solid var(--line);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;user-select:none;}
+  th:hover{color:var(--leaf);}
+  td{padding:10px 8px;border-bottom:1px solid var(--paper);}
+  tr:hover td{background:#fbfaf5;}
+  .flag-hot{color:var(--clay);font-weight:700;}
+  .badge-ok{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--leaf-soft);color:var(--leaf-dark);font-weight:700;}
+  .badge-no{font-size:11px;padding:2px 8px;border-radius:10px;background:#f8e0d8;color:var(--clay);font-weight:700;}
+  .muted{color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="band"><h1>Dashboard ผลการสอบ</h1><p id="bandSub">สำหรับอาจารย์</p></div>
+
+  <section id="loginCard" class="card">
+    <h2>เข้าสู่ระบบ</h2>
+    <div class="note">ใส่รหัสเข้า Dashboard ที่ตั้งไว้ตอนสร้างข้อสอบ ระบบจะแสดงผลเฉพาะวิชานี้เท่านั้น</div>
+    <label>รหัสชุดสอบ (Exam ID)</label>
+    <input type="text" id="examId" placeholder="เช่น EX1A2B3C" autocomplete="off">
+    <label>รหัสเข้า Dashboard</label>
+    <input type="password" id="dashCode" placeholder="รหัสที่ตั้งไว้" autocomplete="off">
+    <div class="err" id="loginErr"></div>
+    <button class="btn" onclick="login()">เข้าสู่ระบบและโหลดผล</button>
+  </section>
+
+  <section id="dashCard" class="hidden">
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="ค้นหาชื่อหรือรหัส..." oninput="renderTable()">
+        <button class="btn ghost" onclick="loadData()">รีเฟรช</button>
+        <button class="btn ghost" onclick="exportCSV()">ดาวน์โหลด CSV</button>
+        <button class="btn ghost" onclick="logout()">ออกจากระบบ</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th onclick="sortBy('sid')">รหัส</th><th onclick="sortBy('name')">ชื่อ-นามสกุล</th>
+            <th onclick="sortBy('year')">ปี</th><th onclick="sortBy('score')">คะแนน</th>
+            <th onclick="sortBy('flags')">ออกจอ</th><th onclick="sortBy('seconds')">เวลา</th>
+            <th onclick="sortBy('in_roster')">ทะเบียน</th><th onclick="sortBy('submitted_at')">ส่งเมื่อ</th>
+          </tr></thead>
+          <tbody id="tblBody"></tbody>
+        </table>
+      </div>
+      <p class="muted" id="emptyMsg" style="display:none;text-align:center;padding:20px;">ยังไม่มีนิสิตส่งข้อสอบ</p>
+    </div>
+  </section>
+</div>
+
+<script>
+"use strict";
+const FN_URL="https://mxuytburrxeegqjzbfnb.supabase.co/functions/v1/exam-api";
+const PUB_KEY="sb_publishable_sFLbri_UHUEhJ71vVEHlsQ_mAAYcGTS";
+const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function norm(s){return String(s||"").toLowerCase().replace(/\s+/g,"");}
+
+let EXAM_ID="", DASH_CODE="", TOTAL_Q=0;
+let data=[], sort={key:"submitted_at",dir:"desc"};
+
+// เติม exam_id จาก URL ถ้ามี
+(function(){const id=new URLSearchParams(location.search).get("id");if(id)$("examId").value=id;})();
+
+async function api(action,payload){
+  const res=await fetch(FN_URL,{method:"POST",
+    headers:{"Content-Type":"application/json","apikey":PUB_KEY,"Authorization":"Bearer "+PUB_KEY},
+    body:JSON.stringify({action,...payload})});
+  return{status:res.status,body:await res.json()};
+}
+
+async function login(){
+  const id=$("examId").value.trim(), code=$("dashCode").value.trim();
+  const err=$("loginErr");
+  if(!id){err.textContent="กรุณาใส่รหัสชุดสอบ";return;}
+  if(!code){err.textContent="กรุณาใส่รหัสเข้า Dashboard";return;}
+  err.textContent="กำลังเข้าสู่ระบบ...";
+  EXAM_ID=id;DASH_CODE=code;
+  const ok=await loadData();
+  if(ok){err.textContent="";$("loginCard").classList.add("hidden");$("dashCard").classList.remove("hidden");}
+  else{err.textContent="รหัสชุดสอบหรือรหัส Dashboard ไม่ถูกต้อง";}
+}
+function logout(){EXAM_ID="";DASH_CODE="";data=[];$("dashCard").classList.add("hidden");$("loginCard").classList.remove("hidden");$("dashCode").value="";}
+
+async function loadData(){
+  try{
+    const{status,body}=await api("dashboard",{exam_id:EXAM_ID,code:DASH_CODE});
+    if(status!==200||!body.ok)return false;
+    data=body.submissions||[];TOTAL_Q=body.total_q||0;
+    $("bandSub").textContent=body.title+(body.subject_code?" · "+body.subject_code:"");
+    renderStats();renderTable();return true;
+  }catch(e){return false;}
+}
+function renderStats(){
+  const total=data.length;
+  const ws=data.filter(r=>r.score!=null);
+  const avg=ws.length?(ws.reduce((s,r)=>s+r.score,0)/ws.length):0;
+  const flagged=data.filter(r=>r.flags>0).length;
+  const notReg=data.filter(r=>!r.in_roster).length;
+  $("stats").innerHTML=
+    '<div class="stat"><div class="num">'+total+'</div><div class="lbl">ส่งแล้ว (คน)</div></div>'+
+    '<div class="stat"><div class="num">'+(ws.length?avg.toFixed(1):"—")+'</div><div class="lbl">คะแนนเฉลี่ย (เต็ม '+TOTAL_Q+')</div></div>'+
+    '<div class="stat"><div class="num">'+flagged+'</div><div class="lbl">มีออกจากจอ</div></div>'+
+    '<div class="stat"><div class="num">'+notReg+'</div><div class="lbl">ไม่ตรงทะเบียน</div></div>';
+}
+function sortBy(k){if(sort.key===k)sort.dir=sort.dir==="asc"?"desc":"asc";else{sort.key=k;sort.dir="asc";}renderTable();}
+function renderTable(){
+  const kw=norm($("search").value);
+  let rows=data.slice();
+  if(kw)rows=rows.filter(r=>norm(r.name).includes(kw)||String(r.sid).includes(kw));
+  const k=sort.key,dir=sort.dir==="asc"?1:-1;
+  rows.sort((a,b)=>{let va=a[k],vb=b[k];
+    if(k==="name"||k==="submitted_at"){va=va||"";vb=vb||"";return String(va).localeCompare(String(vb),"th")*dir;}
+    va=(va==null)?-1:va;vb=(vb==null)?-1:vb;return(va-vb)*dir;});
+  const body=$("tblBody");
+  if(rows.length===0){body.innerHTML="";$("emptyMsg").style.display="block";return;}
+  $("emptyMsg").style.display="none";
+  body.innerHTML=rows.map(r=>{
+    const mm=Math.floor((r.seconds||0)/60),ss=(r.seconds||0)%60;
+    const scoreTxt=(r.score==null)?"—":(r.score+"/"+r.total);
+    const flagCls=r.flags>0?' class="flag-hot"':'';
+    const reg=r.in_roster?'<span class="badge-ok">ตรง</span>':'<span class="badge-no">ไม่ตรง</span>';
+    const dt=r.submitted_at?new Date(r.submitted_at).toLocaleString("th-TH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+    return '<tr><td>'+esc(r.sid)+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.year)+'</td><td>'+scoreTxt+'</td><td'+flagCls+'>'+(r.flags||0)+'</td><td>'+mm+':'+String(ss).padStart(2,"0")+'</td><td>'+reg+'</td><td>'+esc(dt)+'</td></tr>';
+  }).join("");
+}
+function exportCSV(){
+  if(data.length===0){alert("ยังไม่มีข้อมูล");return;}
+  const head=["รหัสนิสิต","ชื่อ-นามสกุล","ชั้นปี","คณะ","สาขา","คะแนน","เต็ม","ตอบ","ออกจากจอ","เวลา(วินาที)","ตรงทะเบียน","ส่งเมื่อ"];
+  const lines=[head.join(",")];
+  data.forEach(r=>{const row=[r.sid,r.name,r.year,r.faculty,r.major,(r.score==null?"":r.score),r.total,r.answered,r.flags,r.seconds,(r.in_roster?"ตรง":"ไม่ตรง"),r.submitted_at];
+    lines.push(row.map(v=>{const s=String(v==null?"":v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(","));});
+  const csv="﻿"+lines.join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download="ผลสอบ_"+EXAM_ID+".csv";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

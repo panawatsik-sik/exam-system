@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบสอบออนไลน์</title>
+<style>
+  :root{--ink:#1a2e22;--paper:#f6f4ec;--card:#fff;--leaf:#2f7d4f;--leaf-dark:#235d3b;
+    --leaf-soft:#e5f0e8;--clay:#c65d3b;--amber:#d99a2b;--line:#d8d4c4;--muted:#6b7566;
+    --shadow:0 2px 8px rgba(30,50,35,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:"Noto Sans Thai","Sarabun",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 90px;}
+  .screen{display:none;} .screen.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .band{background:linear-gradient(160deg,var(--leaf) 0%,var(--leaf-dark) 100%);color:#fff;
+    border-radius:16px;padding:26px 22px;margin-bottom:20px;box-shadow:var(--shadow);}
+  .band h1{font-size:21px;font-weight:700;} .band p{font-size:13.5px;opacity:.9;margin-top:6px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;
+    margin-bottom:16px;box-shadow:var(--shadow);}
+  .card h2{font-size:17px;margin-bottom:4px;} .card .sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+  label{display:block;font-size:14px;font-weight:600;margin-bottom:6px;margin-top:14px;}
+  label:first-of-type{margin-top:0;}
+  input[type=text],select{width:100%;font-size:16px;padding:12px 14px;border:1.5px solid var(--line);
+    border-radius:10px;background:#fbfaf5;color:var(--ink);font-family:inherit;}
+  input:focus,select:focus{outline:none;border-color:var(--leaf);}
+  select{appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7566' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:34px;}
+  .search-wrap{padding:14px;background:var(--leaf-soft);border-radius:12px;margin-bottom:18px;}
+  .search-wrap .stitle{font-size:13px;font-weight:700;color:var(--leaf-dark);margin-bottom:8px;}
+  .toggle{display:flex;gap:8px;margin-bottom:10px;}
+  .toggle button{flex:1;font-family:inherit;font-size:13.5px;font-weight:700;padding:9px;border-radius:9px;
+    border:1.5px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;transition:all .15s;}
+  .toggle button.on{background:var(--leaf);color:#fff;border-color:var(--leaf);}
+  .search-box{position:relative;}
+  .results{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--card);
+    border:1.5px solid var(--line);border-radius:10px;max-height:240px;overflow-y:auto;box-shadow:var(--shadow);display:none;}
+  .results.show{display:block;}
+  .results .item{padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--paper);font-size:15px;}
+  .results .item:last-child{border-bottom:none;}
+  .results .item:hover,.results .item.active{background:var(--leaf-soft);}
+  .results .item .rid{font-size:12px;color:var(--muted);}
+  .results .empty{padding:14px;text-align:center;color:var(--muted);font-size:14px;}
+  .search-hint{font-size:12px;color:var(--muted);margin-top:8px;}
+  .filled-tag{font-size:12px;font-weight:700;color:var(--leaf-dark);background:var(--leaf-soft);
+    padding:6px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+  .filled-tag.show{display:block;}
+  .err{color:var(--clay);font-size:13px;font-weight:600;margin:10px 0 0;min-height:18px;}
+  .btn{display:block;width:100%;text-align:center;font-family:inherit;font-size:16px;font-weight:700;
+    padding:14px;border-radius:12px;border:none;cursor:pointer;background:var(--leaf);color:#fff;
+    transition:background .15s,transform .05s;margin-top:16px;}
+  .btn:active{transform:scale(.99);} .btn:hover{background:var(--leaf-dark);}
+  .btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+  .btn.ghost{background:transparent;color:var(--leaf);border:1.5px solid var(--leaf);}
+  .btn.ghost:hover{background:var(--leaf-soft);}
+  .rules{list-style:none;font-size:14px;}
+  .rules li{padding:8px 0 8px 28px;position:relative;border-bottom:1px dashed var(--line);}
+  .rules li:last-child{border-bottom:none;}
+  .rules li::before{content:"•";position:absolute;left:8px;top:8px;color:var(--leaf);font-weight:700;}
+  .warn-note{background:#fdf3e7;border:1px solid #f0d9b5;border-radius:10px;padding:12px 14px;
+    font-size:13px;color:#8a5a1a;margin-top:14px;}
+  .ready-big{text-align:center;padding:10px 0 4px;}
+  .ready-big .icon{font-size:44px;margin-bottom:6px;} .ready-big .t{font-size:20px;font-weight:800;color:var(--leaf-dark);}
+  .ready-big .s{font-size:14px;color:var(--muted);margin-top:4px;}
+  .confirm-card{border:1.5px solid var(--leaf);background:var(--leaf-soft);}
+  .confirm-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line);font-size:15px;gap:12px;}
+  .confirm-row:last-child{border-bottom:none;}
+  .confirm-row .lbl{color:var(--muted);font-size:14px;white-space:nowrap;} .confirm-row .v{font-weight:700;text-align:right;}
+  .topbar{position:sticky;top:0;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
+  .topbar .who{font-size:13px;color:var(--muted);} .topbar .who strong{color:var(--ink);display:block;font-size:14px;}
+  .progress-num{font-size:14px;font-weight:700;color:var(--leaf-dark);}
+  .flag-count{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--leaf-soft);color:var(--leaf-dark);margin-top:3px;display:inline-block;}
+  .flag-count.hot{background:#f8e0d8;color:var(--clay);}
+  .bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin-bottom:20px;}
+  .bar>div{height:100%;background:var(--leaf);width:0;transition:width .3s;}
+  .q{margin-bottom:22px;scroll-margin-top:80px;}
+  .q .qnum{font-size:13px;font-weight:700;color:var(--leaf);margin-bottom:6px;}
+  .q .qtext{font-size:16px;font-weight:600;margin-bottom:14px;}
+  .choice{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;border:1.5px solid var(--line);
+    border-radius:11px;margin-bottom:10px;cursor:pointer;background:var(--card);transition:border-color .12s,background .12s;}
+  .choice:hover{border-color:var(--leaf);} .choice.sel{border-color:var(--leaf);background:var(--leaf-soft);}
+  .choice .key{flex:0 0 26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;
+    place-items:center;font-size:13px;font-weight:700;color:var(--muted);}
+  .choice.sel .key{background:var(--leaf);color:#fff;border-color:var(--leaf);}
+  .choice .val{flex:1;font-size:15px;padding-top:1px;}
+  /* overlay ล็อกหน้าจอ */
+  .lock{position:fixed;inset:0;z-index:100;display:none;background:rgba(140,40,25,.97);color:#fff;
+    align-items:center;justify-content:center;padding:24px;text-align:center;}
+  .lock.show{display:flex;}
+  .lock .box{max-width:420px;}
+  .lock .icon{font-size:50px;margin-bottom:12px;}
+  .lock h3{font-size:22px;margin-bottom:10px;}
+  .lock p{font-size:15px;opacity:.95;margin-bottom:18px;}
+  .lock input{width:100%;font-size:17px;padding:13px;border-radius:10px;border:none;text-align:center;margin-bottom:6px;font-family:inherit;}
+  .lock .lockerr{font-size:14px;color:#ffd9d0;font-weight:700;min-height:20px;margin-bottom:10px;}
+  .lock .unlockbtn{background:#fff;color:var(--clay);font-weight:800;padding:13px;border-radius:10px;border:none;width:100%;font-size:16px;cursor:pointer;font-family:inherit;}
+  /* overlay เตือนสลับจอ (ก่อนถึงเพดาน) */
+  .overlay{position:fixed;inset:0;z-index:90;display:none;background:rgba(20,35,25,.92);color:#fff;
+    align-items:center;justify-content:center;padding:24px;text-align:center;}
+  .overlay.show{display:flex;}
+  .overlay .box{max-width:400px;} .overlay .icon{font-size:46px;margin-bottom:12px;}
+  .overlay h3{font-size:20px;margin-bottom:10px;} .overlay p{font-size:15px;opacity:.9;margin-bottom:20px;}
+  .overlay .cnt{font-size:15px;font-weight:700;color:var(--amber);}
+  .result-score{text-align:center;padding:16px 0;}
+  .result-score .done-icon{font-size:48px;margin-bottom:8px;} .result-score .big-msg{font-size:22px;font-weight:800;color:var(--leaf-dark);}
+  .stat-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px dashed var(--line);font-size:14px;gap:12px;}
+  .stat-row:last-child{border-bottom:none;} .stat-row .lbl{color:var(--muted);white-space:nowrap;} .stat-row .v{font-weight:700;text-align:right;}
+  .en{color:var(--muted);font-size:.88em;font-weight:400;}
+  .footer-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:24px;}
+  .submit-wrap{position:sticky;bottom:0;padding:12px 0 0;background:linear-gradient(to top,var(--paper) 60%,transparent);}
+  .save-ok{background:var(--leaf-soft);color:var(--leaf-dark);} .save-fail{background:#f8e0d8;color:var(--clay);}
+  .loading{text-align:center;padding:60px 20px;color:var(--muted);}
+  .spinner{width:40px;height:40px;border:4px solid var(--line);border-top-color:var(--leaf);border-radius:50%;
+    animation:spin 1s linear infinite;margin:0 auto 16px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<!-- ล็อกหน้าจอ -->
+<div class="lock" id="lockScreen">
+  <div class="box">
+    <div class="icon">&#128274;</div>
+    <h3>หน้าจอถูกล็อก</h3>
+    <p>ตรวจพบการออกจากหน้าจอสอบเกินจำนวนที่กำหนด<br>กรุณาเรียกอาจารย์ผู้คุมสอบมาใส่รหัสปลดล็อก</p>
+    <input type="password" id="unlockInput" placeholder="รหัสปลดล็อก (อาจารย์เท่านั้น)" autocomplete="off">
+    <div class="lockerr" id="lockErr"></div>
+    <button class="unlockbtn" onclick="tryUnlock()">ปลดล็อก</button>
+  </div>
+</div>
+
+<!-- เตือนสลับจอ -->
+<div class="overlay" id="overlay">
+  <div class="box">
+    <div class="icon">&#9888;&#65039;</div>
+    <h3>ตรวจพบการออกจากหน้าจอสอบ</h3>
+    <p>กรุณาอยู่ในหน้านี้จนกว่าจะส่งคำตอบ</p>
+    <p class="cnt" id="overlayCount"></p>
+    <button class="btn" onclick="resumeExam()">กลับเข้าสู่การสอบ</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- โหลด -->
+  <section class="screen active" id="screenLoad">
+    <div class="loading"><div class="spinner"></div>กำลังโหลดข้อสอบ...</div>
+  </section>
+
+  <!-- error โหลดไม่ได้ -->
+  <section class="screen" id="screenError">
+    <div class="band"><h1>ไม่พบข้อสอบ</h1></div>
+    <div class="card"><p id="errMsg">ลิงก์ไม่ถูกต้อง หรือข้อสอบถูกลบไปแล้ว กรุณาตรวจสอบลิงก์กับอาจารย์</p></div>
+  </section>
+
+  <!-- ลงชื่อ -->
+  <section class="screen" id="screenStart">
+    <div class="band"><h1 id="examTitle">—</h1><p id="examSub">—</p></div>
+    <div class="card">
+      <h2>ลงชื่อเข้าสอบ <span class="en">Check in</span></h2>
+      <p class="sub">ค้นหาชื่อหรือรหัสของคุณเพื่อเติมข้อมูลอัตโนมัติ หรือกรอกเองทุกช่อง</p>
+      <div class="search-wrap" id="searchWrap">
+        <div class="stitle">ค้นหาข้อมูลของฉัน</div>
+        <div class="toggle">
+          <button id="tgId" class="on" onclick="setMode('id')">ค้นด้วยรหัสนิสิต</button>
+          <button id="tgName" onclick="setMode('name')">ค้นด้วยชื่อ-นามสกุล</button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="searchInput" autocomplete="off" placeholder="พิมพ์รหัสนิสิต...">
+          <div class="results" id="results"></div>
+        </div>
+        <div class="search-hint">ถ้าค้นไม่พบ ให้กรอกข้อมูลในช่องด้านล่างเอง</div>
+      </div>
+      <div class="filled-tag" id="filledTag">&#10003; เติมข้อมูลจากรายชื่อแล้ว</div>
+      <label for="fSid">รหัสนิสิต</label>
+      <input type="text" id="fSid" inputmode="numeric" autocomplete="off" placeholder="เช่น 6920101190">
+      <label for="fName">ชื่อ-นามสกุล</label>
+      <input type="text" id="fName" autocomplete="off" placeholder="เช่น นางสาวกนกพิชญ์ มีสุข">
+      <label for="fYear">ชั้นปี</label>
+      <select id="fYear"><option value="">— เลือกชั้นปี —</option>
+        <option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option>
+        <option value="4">ปี 4</option><option value="5">ปี 5</option><option value="6">ปี 6 ขึ้นไป</option></select>
+      <label for="fFaculty">คณะ</label>
+      <input type="text" id="fFaculty" autocomplete="off" placeholder="เช่น เกษตร กำแพงแสน">
+      <label for="fMajor">สาขาวิชา</label>
+      <input type="text" id="fMajor" autocomplete="off" placeholder="เช่น พืชสวน">
+      <div class="err" id="startErr"></div>
+      <button class="btn" onclick="goReady()">ถัดไป</button>
+    </div>
+  </section>
+
+  <!-- ยืนยัน -->
+  <section class="screen" id="screenReady">
+    <div class="band"><h1>ตรวจสอบข้อมูลก่อนเริ่มสอบ</h1></div>
+    <div class="card confirm-card">
+      <div class="confirm-row"><span class="lbl">รหัสนิสิต</span><span class="v" id="cSid">—</span></div>
+      <div class="confirm-row"><span class="lbl">ชื่อ-นามสกุล</span><span class="v" id="cName">—</span></div>
+      <div class="confirm-row"><span class="lbl">ชั้นปี</span><span class="v" id="cYear">—</span></div>
+      <div class="confirm-row"><span class="lbl">คณะ</span><span class="v" id="cFaculty">—</span></div>
+      <div class="confirm-row"><span class="lbl">สาขาวิชา</span><span class="v" id="cMajor">—</span></div>
+    </div>
+    <div class="card">
+      <div class="ready-big"><div class="icon">&#128221;</div><div class="t">พร้อมเริ่มทำข้อสอบ</div>
+        <div class="s">เมื่อกดเริ่ม ระบบจะเริ่มจับเวลาทันที</div></div>
+      <button class="btn" onclick="beginExam()">เริ่มทำข้อสอบ</button>
+      <button class="btn ghost" onclick="backToSearch()">แก้ไขข้อมูล</button>
+    </div>
+    <div class="card">
+      <h2>กติกาการสอบ</h2>
+      <ul class="rules">
+        <li>กรุณาทำข้อสอบในหน้านี้จนเสร็จ ห้ามออกไปหน้าอื่น</li>
+        <li id="ruleLock">ถ้าสลับหน้าจอเกินที่กำหนด ระบบจะล็อก ต้องให้อาจารย์มาปลด</li>
+        <li>เลือกคำตอบที่ถูกที่สุดเพียงข้อเดียว</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ข้อสอบ -->
+  <section class="screen" id="screenExam">
+    <div class="topbar">
+      <div class="who">กำลังสอบ<strong id="whoName">—</strong></div>
+      <div style="text-align:right">
+        <div class="progress-num"><span id="answered">0</span>/<span id="total">0</span> ข้อ</div>
+        <div class="flag-count" id="flagChip">ออกจากจอ 0 ครั้ง</div>
+      </div>
+    </div>
+    <div class="bar"><div id="barFill"></div></div>
+    <div id="questions"></div>
+    <div class="submit-wrap"><button class="btn" id="submitBtn" onclick="submitExam()">ส่งคำตอบ</button></div>
+    <p class="footer-hint">ตรวจทานให้ครบก่อนส่ง เมื่อส่งแล้วจะแก้ไม่ได้</p>
+  </section>
+
+  <!-- ผล -->
+  <section class="screen" id="screenResult">
+    <div class="band"><h1>ส่งคำตอบเรียบร้อย</h1></div>
+    <div class="card">
+      <div class="result-score"><div class="done-icon">&#9989;</div><div class="big-msg">ส่งข้อสอบเรียบร้อยแล้ว</div>
+        <div id="scoreWrap" style="display:none;margin-top:14px;">
+          <div style="font-size:52px;font-weight:800;color:var(--leaf-dark);line-height:1;"><span id="scoreNum">0</span><span style="font-size:22px;color:var(--muted);"> / <span id="scoreTotal">0</span></span></div>
+          <div id="scorePct" style="font-size:17px;font-weight:700;margin-top:6px;">0%</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>สรุปการสอบ</h2>
+      <div class="stat-row"><span class="lbl">รหัสนิสิต</span><span class="v" id="rSid">—</span></div>
+      <div class="stat-row"><span class="lbl">ชื่อ</span><span class="v" id="rName">—</span></div>
+      <div class="stat-row" id="rScoreRow" style="display:none;"><span class="lbl">คะแนน</span><span class="v" id="rScore">—</span></div>
+      <div class="stat-row"><span class="lbl">จำนวนข้อที่ตอบ</span><span class="v" id="rAns">—</span></div>
+      <div class="stat-row"><span class="lbl">จำนวนครั้งที่ออกจากหน้าจอ</span><span class="v" id="rFlags">—</span></div>
+      <div class="stat-row"><span class="lbl">เวลาที่ใช้</span><span class="v" id="rTime">—</span></div>
+    </div>
+    <div id="saveStatus" style="display:none;text-align:center;font-size:14px;font-weight:700;padding:12px;border-radius:10px;margin-top:8px;"></div>
+    <p class="footer-hint">กรุณาแสดงหน้าจอนี้ต่ออาจารย์ผู้คุมสอบ</p>
+  </section>
+</div>
+
+<script>
+"use strict";
+const FN_URL = "https://mxuytburrxeegqjzbfnb.supabase.co/functions/v1/exam-api";
+const PUB_KEY = "sb_publishable_sFLbri_UHUEhJ71vVEHlsQ_mAAYcGTS";
+const $ = id => document.getElementById(id);
+function show(s){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));$(s).classList.add("active");}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function yearLabel(y){return y?("ปี "+y):"—";}
+function normalize(s){return String(s).toLowerCase().replace(/\s+/g,"");}
+
+const EXAM_ID = new URLSearchParams(location.search).get("id");
+let QUESTIONS=[], ROSTER=[], rosterById={}, MAX_FLAGS=3;
+let searchMode="id", activeIdx=-1;
+const state={sid:"",name:"",year:"",faculty:"",major:"",inRoster:false,answers:{},flags:0,startTime:null,submitted:false,examActive:false,locked:false};
+
+async function api(action, payload){
+  const res = await fetch(FN_URL,{method:"POST",
+    headers:{"Content-Type":"application/json","apikey":PUB_KEY,"Authorization":"Bearer "+PUB_KEY},
+    body:JSON.stringify({action,...payload})});
+  return await res.json();
+}
+
+// โหลดข้อสอบ
+(async function(){
+  if(!EXAM_ID){ show("screenError"); return; }
+  try{
+    const d = await api("get_exam",{exam_id:EXAM_ID});
+    if(!d.ok){ $("errMsg").textContent="ไม่พบข้อสอบนี้ กรุณาตรวจสอบลิงก์"; show("screenError"); return; }
+    QUESTIONS = d.exam.questions;
+    ROSTER = d.exam.roster||[];
+    MAX_FLAGS = d.exam.max_flags||3;
+    ROSTER.forEach(r=>rosterById[r.id]=r);
+    $("examTitle").textContent = d.exam.title;
+    $("examSub").textContent = (d.exam.subject_code?d.exam.subject_code+" · ":"")+QUESTIONS.length+" ข้อ";
+    $("ruleLock").textContent = "ถ้าสลับหน้าจอครบ "+MAX_FLAGS+" ครั้ง ระบบจะล็อก ต้องให้อาจารย์มาปลด";
+    if(ROSTER.length===0) $("searchWrap").style.display="none";
+    show("screenStart");
+  }catch(e){ $("errMsg").textContent="เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง"; show("screenError"); }
+})();
+
+function setMode(m){searchMode=m;$("tgId").classList.toggle("on",m==="id");$("tgName").classList.toggle("on",m==="name");
+  $("searchInput").placeholder=m==="id"?"พิมพ์รหัสนิสิต...":"พิมพ์ชื่อหรือนามสกุล...";$("searchInput").value="";hideResults();$("searchInput").focus();}
+function doSearch(){const raw=$("searchInput").value.trim();activeIdx=-1;if(!raw){hideResults();return;}
+  const key=normalize(raw);let m;
+  if(searchMode==="id")m=ROSTER.filter(r=>r.id.includes(raw.replace(/\s+/g,"")));
+  else m=ROSTER.filter(r=>normalize(r.name).includes(key));
+  renderResults(m.slice(0,30));}
+function renderResults(m){const box=$("results");
+  if(m.length===0){box.innerHTML='<div class="empty">ไม่พบในรายชื่อ — กรอกเองด้านล่างได้</div>';box.classList.add("show");return;}
+  box.innerHTML=m.map(r=>'<div class="item" data-id="'+esc(r.id)+'" onclick="fillFrom(\''+r.id+'\')"><div>'+esc(r.name)+'</div><div class="rid">'+r.id+' · '+yearLabel(r.year)+(r.major?' · '+esc(r.major):'')+'</div></div>').join("");
+  box.classList.add("show");}
+function hideResults(){$("results").classList.remove("show");$("results").innerHTML="";}
+function fillFrom(id){const r=rosterById[id];if(!r)return;
+  $("fSid").value=r.id;$("fName").value=r.name;$("fYear").value=String(r.year||"");
+  $("fFaculty").value=r.faculty||"";$("fMajor").value=r.major||"";
+  $("searchInput").value="";hideResults();$("filledTag").classList.add("show");$("startErr").textContent="";}
+
+function goReady(){
+  const sid=$("fSid").value.trim(), name=$("fName").value.trim();
+  if(!sid){$("startErr").textContent="กรุณากรอกรหัสนิสิต";return;}
+  if(!name){$("startErr").textContent="กรุณากรอกชื่อ-นามสกุล";return;}
+  $("startErr").textContent="";
+  const r=rosterById[sid];
+  state.inRoster=!!(r&&normalize(r.name)===normalize(name));
+  state.sid=sid;state.name=name;state.year=$("fYear").value;
+  state.faculty=$("fFaculty").value.trim();state.major=$("fMajor").value.trim();
+  $("cSid").textContent=sid;$("cName").textContent=name;$("cYear").textContent=yearLabel(state.year);
+  $("cFaculty").textContent=state.faculty||"—";$("cMajor").textContent=state.major||"—";
+  show("screenReady");window.scrollTo(0,0);
+}
+function backToSearch(){show("screenStart");window.scrollTo(0,0);}
+
+const USED_KEY="examsys_used";
+function getUsed(){try{return JSON.parse(localStorage.getItem(USED_KEY)||"[]");}catch(e){return[];}}
+function markUsed(id){try{const u=getUsed();const k=EXAM_ID+":"+id;if(!u.includes(k)){u.push(k);localStorage.setItem(USED_KEY,JSON.stringify(u));}}catch(e){}}
+function isUsed(id){return getUsed().includes(EXAM_ID+":"+id);}
+
+function beginExam(){
+  if(isUsed(state.sid)){alert("รหัสนิสิตนี้ได้ส่งข้อสอบจากเครื่องนี้ไปแล้ว");backToSearch();return;}
+  state.startTime=Date.now();state.examActive=true;
+  buildExam();$("whoName").textContent=state.name+" ("+state.sid+")";
+  show("screenExam");window.scrollTo(0,0);
+}
+function buildExam(){const box=$("questions");box.innerHTML="";const keys=["ก","ข","ค","ง"];
+  QUESTIONS.forEach((item,qi)=>{const q=document.createElement("div");q.className="q";q.id="q"+qi;
+    let ch="";item.choices.forEach((c,ci)=>{ch+='<div class="choice" data-q="'+qi+'" data-c="'+ci+'" onclick="pick('+qi+','+ci+')"><div class="key">'+keys[ci]+'</div><div class="val">'+esc(c)+'</div></div>';});
+    q.innerHTML='<div class="qnum">ข้อ '+(qi+1)+'</div><div class="qtext">'+esc(item.q)+'</div>'+ch;box.appendChild(q);});
+  $("total").textContent=QUESTIONS.length;updateProgress();}
+function pick(qi,ci){state.answers[qi]=ci;
+  document.querySelectorAll('.choice[data-q="'+qi+'"]').forEach(el=>el.classList.toggle("sel",Number(el.dataset.c)===ci));
+  updateProgress();}
+function updateProgress(){const n=Object.keys(state.answers).length;$("answered").textContent=n;$("barFill").style.width=(n/QUESTIONS.length*100)+"%";}
+
+// ---- ตรวจจับ + ล็อก ----
+function raiseFlag(){
+  if(!state.examActive||state.submitted||state.locked)return;
+  state.flags++;
+  updateFlagChip();
+  if(state.flags>=MAX_FLAGS){ lockScreen(); }
+  else {
+    $("overlayCount").textContent="ออกจากหน้าจอแล้ว "+state.flags+" ครั้ง (ครบ "+MAX_FLAGS+" ครั้งจะถูกล็อก)";
+    $("overlay").classList.add("show");
+  }
+}
+function updateFlagChip(){const c=$("flagChip");c.textContent="ออกจากจอ "+state.flags+" ครั้ง";c.classList.toggle("hot",state.flags>0);}
+function resumeExam(){$("overlay").classList.remove("show");}
+function lockScreen(){state.locked=true;$("overlay").classList.remove("show");$("lockScreen").classList.add("show");}
+async function tryUnlock(){
+  const code=$("unlockInput").value.trim();
+  if(!code){$("lockErr").textContent="กรุณาใส่รหัส";return;}
+  $("lockErr").textContent="กำลังตรวจสอบ...";
+  try{
+    const d=await api("check_unlock",{exam_id:EXAM_ID,code});
+    if(d.ok){
+      state.locked=false;state.flags=0;updateFlagChip();
+      $("lockScreen").classList.remove("show");$("unlockInput").value="";$("lockErr").textContent="";
+    } else { $("lockErr").textContent="รหัสไม่ถูกต้อง"; }
+  }catch(e){ $("lockErr").textContent="เชื่อมต่อไม่สำเร็จ ลองใหม่"; }
+}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")raiseFlag();});
+window.addEventListener("blur",()=>{setTimeout(()=>{if(document.hidden)return;raiseFlag();},50);});
+
+async function submitExam(){
+  if(state.locked){return;}
+  const n=Object.keys(state.answers).length;
+  if(n<QUESTIONS.length){if(!confirm("ยังเหลืออีก "+(QUESTIONS.length-n)+" ข้อ ต้องการส่งเลยหรือไม่?"))return;}
+  else{if(!confirm("ยืนยันการส่งคำตอบ? เมื่อส่งแล้วจะแก้ไม่ได้"))return;}
+  state.submitted=true;state.examActive=false;
+  const secs=Math.round((Date.now()-state.startTime)/1000);
+  const mm=Math.floor(secs/60),ss=secs%60;
+  $("rSid").textContent=state.sid;$("rName").textContent=state.name;
+  $("rAns").textContent=n+" / "+QUESTIONS.length+" ข้อ";
+  $("rFlags").textContent=state.flags+" ครั้ง";$("rTime").textContent=mm+" นาที "+ss+" วินาที";
+  show("screenResult");window.scrollTo(0,0);
+  const saveMsg=$("saveStatus");saveMsg.textContent="กำลังบันทึกผลเข้าระบบ...";saveMsg.className="";saveMsg.style.display="block";
+  try{
+    const d=await api("submit",{exam_id:EXAM_ID,sid:state.sid,name:state.name,year:state.year,
+      faculty:state.faculty,major:state.major,in_roster:state.inRoster,answered:n,flags:state.flags,
+      seconds:secs,answers:state.answers});
+    if(d.ok&&d.status==="ok"){
+      markUsed(state.sid);
+      if(d.score!=null){const pct=Math.round(d.score/d.total*100);
+        $("scoreNum").textContent=d.score;$("scoreTotal").textContent=d.total;$("scorePct").textContent=pct+"%";
+        $("scoreWrap").style.display="block";$("rScore").textContent=d.score+" / "+d.total+" ("+pct+"%)";$("rScoreRow").style.display="flex";}
+      saveMsg.textContent="✓ บันทึกผลเข้าระบบเรียบร้อยแล้ว";saveMsg.className="save-ok";
+    } else if(d.status==="duplicate"){
+      markUsed(state.sid);
+      saveMsg.textContent="⚠ รหัสนี้เคยส่งข้อสอบไปแล้ว ระบบเก็บเฉพาะครั้งแรก";saveMsg.className="save-fail";
+    } else { saveMsg.textContent="⚠ บันทึกไม่สำเร็จ กรุณาแจ้งอาจารย์";saveMsg.className="save-fail"; }
+  }catch(e){ saveMsg.textContent="⚠ บันทึกไม่สำเร็จ (เครือข่ายมีปัญหา) กรุณาแจ้งอาจารย์";saveMsg.className="save-fail"; }
+}
+window.addEventListener("beforeunload",e=>{if(state.examActive&&!state.submitted){e.preventDefault();e.returnValue="";}});
+
+$("searchInput").addEventListener("input",doSearch);
+$("searchInput").addEventListener("keydown",e=>{
+  const items=Array.from($("results").querySelectorAll(".item"));
+  if(e.key==="ArrowDown"){e.preventDefault();activeIdx=Math.min(activeIdx+1,items.length-1);}
+  else if(e.key==="ArrowUp"){e.preventDefault();activeIdx=Math.max(activeIdx-1,0);}
+  else if(e.key==="Enter"){if(activeIdx>=0&&items[activeIdx]&&items[activeIdx].dataset.id)fillFrom(items[activeIdx].dataset.id);return;}
+  else return;
+  items.forEach((it,i)=>it.classList.toggle("active",i===activeIdx));
+  if(items[activeIdx])items[activeIdx].scrollIntoView({block:"nearest"});});
+document.addEventListener("click",e=>{if(!e.target.closest(".search-box"))hideResults();});
+</script>
+</body>
+</html>

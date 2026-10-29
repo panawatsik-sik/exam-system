@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สร้างข้อสอบ | ระบบสอบออนไลน์</title>
+<style>
+  :root{--ink:#1a2e22;--paper:#f6f4ec;--card:#fff;--leaf:#2f7d4f;--leaf-dark:#235d3b;
+    --leaf-soft:#e5f0e8;--clay:#c65d3b;--amber:#d99a2b;--line:#d8d4c4;--muted:#6b7566;
+    --shadow:0 2px 8px rgba(30,50,35,.08);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Noto Sans Thai","Sarabun",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--paper);color:var(--ink);line-height:1.6;padding:20px 16px 60px;}
+  .wrap{max-width:760px;margin:0 auto;}
+  .band{background:linear-gradient(160deg,var(--leaf) 0%,var(--leaf-dark) 100%);color:#fff;
+    border-radius:16px;padding:26px 22px;margin-bottom:20px;box-shadow:var(--shadow);}
+  .band h1{font-size:22px;font-weight:700;}
+  .band p{font-size:13.5px;opacity:.9;margin-top:6px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;
+    margin-bottom:16px;box-shadow:var(--shadow);}
+  .card h2{font-size:17px;margin-bottom:4px;}
+  .card .sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+  label{display:block;font-size:14px;font-weight:600;margin:14px 0 6px;}
+  label:first-of-type{margin-top:0;}
+  input[type=text],input[type=email],input[type=number]{width:100%;font-size:16px;padding:12px 14px;
+    border:1.5px solid var(--line);border-radius:10px;background:#fbfaf5;color:var(--ink);font-family:inherit;}
+  input:focus{outline:none;border-color:var(--leaf);}
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
+  .row>div{flex:1;min-width:160px;}
+  .filebox{border:2px dashed var(--line);border-radius:12px;padding:20px;text-align:center;
+    background:#fbfaf5;cursor:pointer;transition:border-color .15s;}
+  .filebox:hover{border-color:var(--leaf);}
+  .filebox.ok{border-color:var(--leaf);background:var(--leaf-soft);}
+  .filebox .big{font-size:15px;font-weight:700;color:var(--leaf-dark);margin-bottom:4px;}
+  .filebox .small{font-size:12.5px;color:var(--muted);}
+  .btn{display:block;width:100%;text-align:center;font-family:inherit;font-size:16px;font-weight:700;
+    padding:14px;border-radius:12px;border:none;cursor:pointer;background:var(--leaf);color:#fff;
+    transition:background .15s;margin-top:18px;}
+  .btn:hover{background:var(--leaf-dark);}
+  .btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+  .btn.ghost{background:transparent;color:var(--leaf);border:1.5px solid var(--leaf);}
+  .err{color:var(--clay);font-size:13px;font-weight:600;min-height:18px;margin-top:10px;}
+  .note{background:#fdf3e7;border:1px solid #f0d9b5;border-radius:10px;padding:12px 14px;
+    font-size:13px;color:#8a5a1a;margin-top:10px;}
+  .preview{font-size:13px;color:var(--muted);margin-top:8px;}
+  .hidden{display:none;}
+  .result-box{background:var(--leaf-soft);border:1.5px solid var(--leaf);border-radius:12px;padding:18px;margin-top:4px;}
+  .result-box .lbl{font-size:12px;color:var(--muted);margin-top:12px;}
+  .result-box .lbl:first-child{margin-top:0;}
+  .result-box .val{font-size:15px;font-weight:700;word-break:break-all;}
+  .result-box a{color:var(--leaf-dark);}
+  .copy{font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--leaf);
+    background:#fff;color:var(--leaf-dark);cursor:pointer;margin-left:6px;}
+  .steplink{font-size:13px;color:var(--muted);margin-top:4px;}
+  a.tmpl{color:var(--leaf-dark);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="band">
+    <h1>สร้างข้อสอบออนไลน์</h1>
+    <p>สำหรับอาจารย์ · กรอกข้อมูล อัปโหลดข้อสอบและรายชื่อ แล้วรับลิงก์สอบทันที</p>
+  </div>
+
+  <!-- ฟอร์มสร้าง -->
+  <section id="formCard">
+    <div class="card">
+      <h2>1. ข้อมูลวิชา</h2>
+      <p class="sub">ตั้งชื่อให้จำง่าย จะแสดงบนหน้าสอบของนิสิต</p>
+      <label>ชื่อวิชา / ชุดสอบ *</label>
+      <input type="text" id="title" placeholder="เช่น วิทยาศาสตร์พืชสวน สอบย่อยครั้งที่ 2">
+      <div class="row">
+        <div>
+          <label>รหัสวิชา</label>
+          <input type="text" id="subjectCode" placeholder="เช่น 02036271">
+        </div>
+        <div>
+          <label>อีเมลอาจารย์</label>
+          <input type="email" id="email" placeholder="your@ku.th">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. ข้อสอบ</h2>
+      <p class="sub">ดาวน์โหลด <a class="tmpl" href="แม่แบบข้อสอบ.xlsx" download>แม่แบบ Excel</a> กรอกข้อสอบ แล้วอัปโหลดกลับมา</p>
+      <div class="filebox" id="qBox" onclick="document.getElementById('qFile').click()">
+        <div class="big" id="qBoxTitle">คลิกเพื่ออัปโหลดไฟล์ข้อสอบ (.xlsx)</div>
+        <div class="small">ไฟล์ Excel ที่กรอกตามแม่แบบ</div>
+      </div>
+      <input type="file" id="qFile" accept=".xlsx,.xls" class="hidden">
+      <div class="preview" id="qPreview"></div>
+    </div>
+
+    <div class="card">
+      <h2>3. รายชื่อนิสิต (ไม่บังคับ)</h2>
+      <p class="sub">อัปโหลดไฟล์รายชื่อจากระบบทะเบียน (ConsiderCourseChange) ได้โดยตรง ระบบจะตัดผู้ถอนรายวิชาและคำนวณชั้นปีให้อัตโนมัติ</p>
+      <div class="filebox" id="rBox" onclick="document.getElementById('rFile').click()">
+        <div class="big" id="rBoxTitle">คลิกเพื่ออัปโหลดรายชื่อ (.xlsx)</div>
+        <div class="small">ใช้ไฟล์จากทะเบียนได้เลย หรือไฟล์ที่มีคอลัมน์ รหัส / ชื่อ / คณะ / สาขา</div>
+      </div>
+      <input type="file" id="rFile" accept=".xlsx,.xls" class="hidden">
+      <div class="preview" id="rPreview"></div>
+    </div>
+
+    <div class="card">
+      <h2>4. การตั้งค่าและรหัส</h2>
+      <p class="sub">ตั้งรหัสให้จำได้ แต่นิสิตเดายาก (อย่าใช้รหัสส่วนตัวที่ใช้ที่อื่น)</p>
+      <label>ล็อกหน้าจอเมื่อสลับหน้าจอครบกี่ครั้ง</label>
+      <input type="number" id="maxFlags" value="3" min="1" max="20">
+      <div class="note">เมื่อนิสิตสลับหน้าจอครบจำนวนนี้ ระบบจะล็อก นิสิตต้องให้อาจารย์มาใส่รหัสปลดล็อกจึงจะทำต่อได้</div>
+      <div class="row" style="margin-top:14px;">
+        <div>
+          <label>รหัสปลดล็อก (อาจารย์ใส่ที่เครื่องนิสิต) *</label>
+          <input type="text" id="unlockCode" placeholder="เช่น Hort-271">
+        </div>
+        <div>
+          <label>รหัสเข้าดูผล Dashboard *</label>
+          <input type="text" id="dashCode" placeholder="เช่น See-Result-271">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="submitBtn" onclick="createExam()">สร้างข้อสอบ</button>
+    <div class="err" id="err"></div>
+    <p style="text-align:center;margin-top:16px;font-size:13.5px;"><a href="myexams.html" style="color:var(--leaf-dark);font-weight:700;">ดูชุดสอบที่เคยสร้างไว้ (ชุดสอบของฉัน)</a></p>
+  </section>
+
+  <!-- ผลลัพธ์หลังสร้าง -->
+  <section id="doneCard" class="hidden">
+    <div class="card">
+      <h2>สร้างข้อสอบสำเร็จ</h2>
+      <p class="sub">เก็บลิงก์เหล่านี้ไว้ รหัสชุดสอบคือ <strong id="examIdShow"></strong></p>
+      <div class="result-box">
+        <div class="lbl">ลิงก์สำหรับนิสิต (ทำ QR Code จากลิงก์นี้)</div>
+        <div class="val"><a id="examLink" href="#" target="_blank"></a><button class="copy" onclick="copyText('examLink')">คัดลอก</button></div>
+
+        <div class="lbl">ลิงก์ดูผล Dashboard (สำหรับอาจารย์)</div>
+        <div class="val"><a id="dashLink" href="#" target="_blank"></a><button class="copy" onclick="copyText('dashLink')">คัดลอก</button></div>
+
+        <div class="lbl">รหัสปลดล็อก (จำไว้ใช้ปลดล็อกเครื่องนิสิต)</div>
+        <div class="val" id="unlockShow"></div>
+
+        <div class="lbl">รหัสเข้า Dashboard</div>
+        <div class="val" id="dashCodeShow"></div>
+      </div>
+      <div class="note" style="margin-top:14px;">บันทึกข้อมูลนี้ไว้ก่อนปิดหน้า โดยเฉพาะรหัสชุดสอบและรหัสต่าง ๆ ถ้าลืมรหัส Dashboard จะดูผลไม่ได้</div>
+      <button class="btn ghost" onclick="location.reload()">สร้างชุดสอบใหม่</button>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+"use strict";
+const FN_URL = "https://mxuytburrxeegqjzbfnb.supabase.co/functions/v1/exam-api";
+const PUB_KEY = "sb_publishable_sFLbri_UHUEhJ71vVEHlsQ_mAAYcGTS";
+const $ = id => document.getElementById(id);
+
+let questions = [];
+let roster = [];
+
+// แปลงเฉลย ก/ข/ค/ง หรือ 1-4 เป็น index 0-3
+function parseAnswer(v){
+  const s = String(v).trim();
+  const map = {"ก":0,"ข":1,"ค":2,"ง":3,"1":0,"2":1,"3":2,"4":3,
+    "a":0,"b":1,"c":2,"d":3,"A":0,"B":1,"C":2,"D":3};
+  return map[s] !== undefined ? map[s] : null;
+}
+
+$("qFile").addEventListener("change", e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ev=>{
+    try{
+      const wb = XLSX.read(ev.target.result, {type:"array"});
+      const sh = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sh, {header:1});
+      questions = [];
+      let bad = [];
+      for(let i=1;i<rows.length;i++){
+        const r = rows[i];
+        if(!r || !r[1] || String(r[1]).trim()==="") continue; // ไม่มีโจทย์ = ข้าม
+        const q = String(r[1]).trim();
+        const choices = [r[2],r[3],r[4],r[5]].map(x=>x==null?"":String(x).trim());
+        const ans = parseAnswer(r[6]);
+        const rowNo = r[0] || i;
+        if(choices.some(c=>c==="")){ bad.push("ข้อ "+rowNo+" ตัวเลือกไม่ครบ"); continue; }
+        if(ans===null){ bad.push("ข้อ "+rowNo+" เฉลยไม่ถูกต้อง (ต้องเป็น ก/ข/ค/ง)"); continue; }
+        questions.push({q, choices, answer:ans});
+      }
+      $("qBox").classList.add("ok");
+      $("qBoxTitle").textContent = "อัปโหลดแล้ว: "+questions.length+" ข้อ";
+      let msg = "อ่านข้อสอบได้ "+questions.length+" ข้อ";
+      if(bad.length) msg += " | ข้ามไป "+bad.length+" ข้อ: "+bad.slice(0,3).join(", ")+(bad.length>3?"...":"");
+      $("qPreview").textContent = msg;
+    }catch(err){ $("qPreview").textContent = "อ่านไฟล์ไม่สำเร็จ: "+err.message; }
+  };
+  rd.readAsArrayBuffer(f);
+});
+
+$("rFile").addEventListener("change", e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ev=>{
+    try{
+      const wb = XLSX.read(ev.target.result, {type:"array"});
+      const sh = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sh, {header:1});
+      roster = [];
+      // หาแถวหัวตาราง + ตำแหน่งคอลัมน์จากชื่อหัว
+      let startRow = 0, colSid=-1, colName=-1, colYear=-1, colFac=-1, colMajor=-1, colStatus=-1;
+      for(let i=0;i<Math.min(rows.length,15);i++){
+        const r = rows[i]||[];
+        const line = r.map(x=>String(x==null?"":x)).join("");
+        if(line.includes("รหัส")){
+          startRow=i+1;
+          r.forEach((cell,c)=>{
+            const h = String(cell==null?"":cell).replace(/\s+/g,"");
+            if(/รหัสนิสิต|รหัสนักศึกษา/.test(h) && colSid<0) colSid=c;
+            else if(/^รหัส$/.test(h) && colSid<0) colSid=c;
+            else if(/ชื่อ|นามสกุล/.test(h) && colName<0) colName=c;
+            else if(/ชั้นปี|^ปี$/.test(h) && colYear<0) colYear=c;
+            else if(/คณะ/.test(h) && colFac<0) colFac=c;
+            else if(/สาขา/.test(h) && !/รหัสสาขา/.test(h) && colMajor<0) colMajor=c;
+            else if(/สถานะ/.test(h) && colStatus<0) colStatus=c;
+          });
+          break;
+        }
+      }
+      // ปีการศึกษาปัจจุบัน (พ.ศ. 2 หลักท้าย) ใช้คำนวณชั้นปีจากรหัส
+      const curYY = ((new Date().getFullYear()+543) % 100);
+      let dropped = 0;
+      for(let i=startRow;i<rows.length;i++){
+        const r = rows[i]; if(!r) continue;
+        const get = c => (c>=0 && r[c]!=null) ? String(r[c]).trim() : "";
+        // รหัส
+        let sid = get(colSid);
+        if(!/^\d{6,}$/.test(sid)){
+          sid = "";
+          for(let c=0;c<r.length;c++){ const v=String(r[c]==null?"":r[c]).trim(); if(/^\d{6,}$/.test(v)){sid=v;break;} }
+        }
+        if(!sid) continue;
+        // ตัดคนที่ถอนรายวิชา (Drop)
+        const status = get(colStatus);
+        if(/drop|ถอน|w\b|ติด\s*w/i.test(status)){ dropped++; continue; }
+        // ชื่อไทย (ถ้าไฟล์มีทั้งไทย/อังกฤษ เลือกไทย)
+        let name = get(colName);
+        if(!name || !/[ก-๙]/.test(name)){
+          for(let c=0;c<r.length;c++){ const v=String(r[c]==null?"":r[c]).trim();
+            if(/[ก-๙]/.test(v) && v.length>3 && !/เกษตร|กำแพงแสน|^\d/.test(v)){ name=v; break; } }
+        }
+        // ชั้นปี: ใช้คอลัมน์ปีถ้ามี ไม่งั้นคำนวณจากรหัส (2 ตัวแรก)
+        let yr = parseInt(get(colYear));
+        if(!(yr>=1&&yr<=8)){
+          const pre = parseInt(sid.slice(0,2));
+          const y = curYY - pre + 1;
+          yr = (y>=1&&y<=8) ? y : "";
+        }
+        roster.push({ id:sid, name:name||sid, year:yr, faculty:get(colFac), major:get(colMajor) });
+      }
+      $("rBox").classList.add("ok");
+      $("rBoxTitle").textContent = "อัปโหลดแล้ว: "+roster.length+" คน";
+      let msg = roster.length ? ("อ่านรายชื่อได้ "+roster.length+" คน | ตัวอย่าง: "+roster[0].name+" ("+roster[0].id+", ปี "+roster[0].year+")") : "ไม่พบรายชื่อ ตรวจสอบคอลัมน์รหัสนิสิต";
+      if(dropped>0) msg += " | ตัดผู้ถอนรายวิชา "+dropped+" คนออกแล้ว";
+      $("rPreview").textContent = msg;
+    }catch(err){ $("rPreview").textContent = "อ่านไฟล์ไม่สำเร็จ: "+err.message; }
+  };
+  rd.readAsArrayBuffer(f);
+});
+
+async function createExam(){
+  const err = $("err"); err.textContent="";
+  const title = $("title").value.trim();
+  const unlockCode = $("unlockCode").value.trim();
+  const dashCode = $("dashCode").value.trim();
+  if(!title){ err.textContent="กรุณากรอกชื่อวิชา"; return; }
+  if(questions.length===0){ err.textContent="กรุณาอัปโหลดไฟล์ข้อสอบที่มีข้อมูลถูกต้อง"; return; }
+  if(!unlockCode){ err.textContent="กรุณาตั้งรหัสปลดล็อก"; return; }
+  if(!dashCode){ err.textContent="กรุณาตั้งรหัสเข้า Dashboard"; return; }
+
+  const btn = $("submitBtn");
+  btn.disabled=true; btn.textContent="กำลังสร้าง...";
+  try{
+    const res = await fetch(FN_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json","apikey":PUB_KEY,"Authorization":"Bearer "+PUB_KEY},
+      body: JSON.stringify({ action:"create_exam", exam:{
+        title, subject_code:$("subjectCode").value.trim(), teacher_email:$("email").value.trim(),
+        questions, roster, max_flags:parseInt($("maxFlags").value)||3,
+        unlock_code:unlockCode, dashboard_code:dashCode
+      }})
+    });
+    const data = await res.json();
+    if(!data.ok){ err.textContent="สร้างไม่สำเร็จ: "+(data.error||"ลองใหม่อีกครั้ง"); btn.disabled=false; btn.textContent="สร้างข้อสอบ"; return; }
+    // แสดงผล
+    const base = location.href.replace(/create\.html.*$/,"");
+    const examUrl = base+"exam.html?id="+data.exam_id;
+    const dashUrl = base+"dashboard.html?id="+data.exam_id;
+    $("examIdShow").textContent = data.exam_id;
+    $("examLink").textContent = examUrl; $("examLink").href = examUrl;
+    $("dashLink").textContent = dashUrl; $("dashLink").href = dashUrl;
+    $("unlockShow").textContent = unlockCode;
+    $("dashCodeShow").textContent = dashCode;
+    $("formCard").classList.add("hidden");
+    $("doneCard").classList.remove("hidden");
+    window.scrollTo(0,0);
+  }catch(e){
+    err.textContent="เชื่อมต่อไม่สำเร็จ: "+e.message;
+    btn.disabled=false; btn.textContent="สร้างข้อสอบ";
+  }
+}
+
+function copyText(id){
+  const t = $(id).textContent;
+  navigator.clipboard.writeText(t).then(()=>{
+    const b=event.target; const o=b.textContent; b.textContent="คัดลอกแล้ว"; setTimeout(()=>b.textContent=o,1500);
+  });
+}
+</script>
+</body>
+</html>

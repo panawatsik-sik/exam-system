@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือระบบสอบออนไลน์ | วิธีใช้สำหรับอาจารย์</title>
+<style>
+  :root{
+    --ink:#1a2e22;--paper:#f6f4ec;--card:#fff;--leaf:#2f7d4f;--leaf-dark:#235d3b;
+    --leaf-soft:#e5f0e8;--clay:#c65d3b;--amber:#d99a2b;--gold:#d9a93b;--line:#d8d4c4;--muted:#6b7566;
+    --shadow:0 4px 16px rgba(30,50,35,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Noto Sans Thai","Sarabun",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--paper);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 15% 6%,rgba(47,125,79,.05),transparent 35%),radial-gradient(circle at 85% 96%,rgba(217,169,59,.05),transparent 35%);}
+  .page{max-width:840px;margin:0 auto;padding:28px 18px 60px;}
+
+  .hero{background:linear-gradient(145deg,var(--leaf) 0%,var(--leaf-dark) 100%);color:#fff;
+    border-radius:22px;padding:38px 30px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden;margin-bottom:14px;}
+  .hero::before{content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,.08);border-radius:50%;}
+  .hero::after{content:"";position:absolute;bottom:-50px;left:-30px;width:130px;height:130px;background:rgba(255,255,255,.06);border-radius:50%;}
+  .hero .badge{display:inline-block;background:rgba(255,255,255,.18);padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:14px;letter-spacing:.3px;}
+  .hero h1{font-size:30px;font-weight:800;line-height:1.3;margin-bottom:10px;position:relative;}
+  .hero p{font-size:15px;opacity:.95;max-width:580px;margin:0 auto;position:relative;}
+
+  .intro{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 24px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .intro h2{font-size:19px;color:var(--leaf-dark);margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+  .intro h2 .dot{width:8px;height:22px;background:var(--gold);border-radius:4px;}
+  .intro .lead{font-size:14px;color:#44524a;margin-bottom:16px;}
+  .feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+  @media(max-width:560px){.feat-grid{grid-template-columns:1fr;}}
+  .feat{display:flex;gap:12px;align-items:flex-start;padding:14px;background:var(--leaf-soft);border-radius:12px;}
+  .feat .ic{font-size:24px;flex-shrink:0;}
+  .feat .ft{font-size:14.5px;font-weight:700;color:var(--leaf-dark);}
+  .feat .fd{font-size:12.5px;color:var(--muted);margin-top:2px;}
+
+  /* เตรียมก่อนเริ่ม */
+  .prep{background:linear-gradient(145deg,#eef6f0,#e5f0e8);border:1.5px solid #c9e0d1;border-radius:18px;padding:24px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .prep h2{font-size:18px;color:var(--leaf-dark);margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+  .prep .plist{list-style:none;}
+  .prep .plist li{font-size:14px;padding:9px 0 9px 30px;position:relative;border-bottom:1px dashed #c9e0d1;}
+  .prep .plist li:last-child{border-bottom:none;}
+  .prep .plist li::before{content:"\2713";position:absolute;left:4px;top:9px;color:var(--leaf);font-weight:800;font-size:15px;}
+  .prep .plist li b{color:var(--ink);}
+
+  .steps-title{text-align:center;margin:34px 0 20px;}
+  .steps-title h2{font-size:23px;color:var(--leaf-dark);font-weight:800;}
+  .steps-title p{font-size:14px;color:var(--muted);margin-top:4px;}
+
+  .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .step-head{display:flex;gap:16px;align-items:center;margin-bottom:14px;}
+  .step-head .num{flex-shrink:0;width:50px;height:50px;border-radius:14px;background:linear-gradient(145deg,var(--leaf),var(--leaf-dark));color:#fff;display:grid;place-items:center;font-size:23px;font-weight:800;box-shadow:0 3px 8px rgba(47,125,79,.3);}
+  .step-head h3{font-size:19px;color:var(--ink);display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .step-head h3 .emoji{font-size:21px;}
+  .step .intro-line{font-size:14.5px;color:#44524a;margin-bottom:14px;}
+  .substep{padding:12px 0 12px 16px;border-left:3px solid var(--leaf-soft);margin-bottom:10px;}
+  .substep .st{font-size:14.5px;font-weight:700;color:var(--leaf-dark);margin-bottom:3px;}
+  .substep .sd{font-size:13.5px;color:#4a564e;}
+  .substep .sd b{color:var(--ink);}
+  .pagechip{display:inline-block;background:var(--leaf-soft);color:var(--leaf-dark);font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:8px;font-family:monospace;}
+  .tipbox{background:#fdf3e7;border:1px solid #f0d9b5;border-radius:10px;padding:11px 14px;font-size:13px;color:#8a5a1a;margin-top:12px;}
+  .tipbox b{color:#6d4612;}
+  .connector{text-align:center;color:var(--line);font-size:22px;margin:-6px 0 6px;}
+
+  .highlight{background:linear-gradient(145deg,#fdf3e7,#fbe9d4);border:1.5px solid #f0d9b5;border-radius:18px;padding:26px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .highlight h3{font-size:18px;color:#8a5a1a;margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+  .highlight p{font-size:14px;color:#7a5618;margin-bottom:10px;}
+  .highlight .steps-mini{list-style:none;}
+  .highlight .steps-mini li{font-size:13.5px;color:#7a5618;padding:5px 0 5px 26px;position:relative;}
+  .highlight .steps-mini li::before{content:"\2192";position:absolute;left:4px;color:var(--clay);font-weight:800;}
+  .highlight .big-ic{font-size:26px;}
+
+  .notes{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .notes h2{font-size:18px;color:var(--leaf-dark);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .notes h2 .dot{width:8px;height:22px;background:var(--clay);border-radius:4px;}
+  .note-item{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px dashed var(--line);}
+  .note-item:last-child{border-bottom:none;}
+  .note-item .ic{font-size:20px;flex-shrink:0;}
+  .note-item .nt{font-size:14px;}
+  .note-item .nt b{color:var(--ink);}
+
+  /* FAQ */
+  .faq{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .faq h2{font-size:18px;color:var(--leaf-dark);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .faq h2 .dot{width:8px;height:22px;background:var(--leaf);border-radius:4px;}
+  .qa{padding:12px 0;border-bottom:1px dashed var(--line);}
+  .qa:last-child{border-bottom:none;}
+  .qa .q{font-size:14.5px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+  .qa .q::before{content:"Q ";color:var(--leaf);font-weight:800;}
+  .qa .a{font-size:13.5px;color:#4a564e;padding-left:20px;}
+  .qa .a::before{content:"A ";color:var(--clay);font-weight:800;margin-left:-20px;}
+
+  .foot{text-align:center;padding:24px;color:var(--muted);font-size:13px;}
+  .foot .brand{font-weight:800;color:var(--leaf-dark);font-size:15px;margin-bottom:4px;}
+
+  @media print{body{background:#fff;} .hero,.intro,.prep,.step,.highlight,.notes,.faq{box-shadow:none;break-inside:avoid;}
+    .step-head .num{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <div class="badge">คู่มือสำหรับอาจารย์ · ฉบับละเอียด</div>
+    <h1>ระบบสอบออนไลน์ด้วย QR Code</h1>
+    <p>สร้างข้อสอบปรนัยให้นิสิตสแกน QR ทำบนมือถือ ตรวจคะแนนอัตโนมัติ เก็บผลครบทุกคน ใช้ง่ายไม่ต้องติดตั้งโปรแกรม</p>
+  </div>
+
+  <div class="intro">
+    <h2><span class="dot"></span>ระบบนี้คืออะไร</h2>
+    <p class="lead">เป็นเว็บสำหรับจัดสอบปรนัย (เลือกตอบ ก ข ค ง) อาจารย์สร้างข้อสอบเองได้ นิสิตใช้มือถือตัวเองสแกน QR code เข้าทำข้อสอบ ระบบตรวจคะแนนและเก็บผลให้อัตโนมัติ ไม่ต้องตรวจกระดาษ ไม่ต้องกรอกคะแนนเอง</p>
+    <div class="feat-grid">
+      <div class="feat"><div class="ic">&#128241;</div><div><div class="ft">สอบบนมือถือนิสิต</div><div class="fd">สแกน QR เปิดได้เลย ไม่ต้องลงแอป ไม่ต้องล็อกอิน</div></div></div>
+      <div class="feat"><div class="ic">&#9989;</div><div><div class="ft">ตรวจคะแนนอัตโนมัติ</div><div class="fd">นิสิตเห็นคะแนนทันทีที่กดส่ง</div></div></div>
+      <div class="feat"><div class="ic">&#128273;</div><div><div class="ft">ล็อกหน้าจอกันทุจริต</div><div class="fd">สลับแอปเกินกำหนด ระบบล็อก ต้องให้อาจารย์ปลด</div></div></div>
+      <div class="feat"><div class="ic">&#128202;</div><div><div class="ft">เก็บผลครบทุกคน</div><div class="fd">ดูคะแนนรวม ดาวน์โหลดไฟล์ Excel ได้</div></div></div>
+    </div>
+  </div>
+
+  <div class="prep">
+    <h2>&#128188; เตรียมก่อนเริ่ม</h2>
+    <ul class="plist">
+      <li><b>ไฟล์ข้อสอบ</b> กรอกในแม่แบบ Excel ที่ให้มา แต่ละข้อมี โจทย์ / ตัวเลือก ก ข ค ง / เฉลย (เฉลยพิมพ์ ก ข ค ง หรือเลข 1-4 ก็ได้)</li>
+      <li><b>ไฟล์รายชื่อนิสิต</b> (ไม่บังคับ) ใช้ไฟล์ที่โหลดจากระบบทะเบียน (ConsiderCourseChange) ได้เลย ไม่ต้องแก้อะไร</li>
+      <li><b>คิดรหัสไว้ 2 ตัว</b> รหัสปลดล็อก (ไว้ปลดเครื่องนิสิตตอนถูกล็อก) และรหัสดูผล ตั้งให้จำได้แต่นิสิตเดายาก และอย่าใช้รหัสส่วนตัวที่ใช้ที่อื่น</li>
+      <li><b>อุปกรณ์วันสอบ</b> คอมพิวเตอร์หรือมือถือของอาจารย์ (ไว้เปิดดูผล) และนิสิตต้องมีมือถือที่ต่ออินเทอร์เน็ตได้</li>
+    </ul>
+  </div>
+
+  <div class="steps-title">
+    <h2>วิธีใช้งาน ทีละขั้น</h2>
+    <p>ทำตามลำดับ ตั้งแต่สร้างข้อสอบจนได้คะแนน</p>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step">
+    <div class="step-head"><div class="num">1</div><h3><span class="emoji">&#128221;</span>สร้างข้อสอบ</h3></div>
+    <p class="intro-line">เปิดหน้า <span class="pagechip">create.html</span> แล้วทำตามนี้ทีละส่วน</p>
+    <div class="substep"><div class="st">1.1 กรอกข้อมูลวิชา</div><div class="sd">พิมพ์ชื่อวิชาหรือชื่อการสอบ (เช่น "วิทยาศาสตร์พืชสวน สอบย่อยครั้งที่ 2") ใส่รหัสวิชาและอีเมลได้ถ้าต้องการ</div></div>
+    <div class="substep"><div class="st">1.2 อัปโหลดไฟล์ข้อสอบ</div><div class="sd">กดปุ่มอัปโหลด เลือกไฟล์ Excel ที่กรอกข้อสอบไว้ ระบบจะอ่านแล้วบอกว่าได้กี่ข้อ <b>ถ้ายังไม่มีไฟล์</b> กดลิงก์ "แม่แบบ Excel" ในหน้านั้นเพื่อดาวน์โหลดไปกรอกก่อน</div></div>
+    <div class="substep"><div class="st">1.3 อัปโหลดรายชื่อนิสิต (ไม่บังคับ)</div><div class="sd">อัปโหลดไฟล์รายชื่อจากทะเบียน ระบบจะตัดคนที่ถอนรายวิชาออกและคำนวณชั้นปีให้เอง ถ้าไม่อัปโหลด นิสิตจะกรอกข้อมูลตัวเองตอนเข้าสอบแทน</div></div>
+    <div class="substep"><div class="st">1.4 ตั้งค่าและรหัส</div><div class="sd">เลือกว่าจะล็อกหน้าจอเมื่อสลับจอครบกี่ครั้ง (แนะนำ 3) ตั้ง<b>รหัสปลดล็อก</b>และ<b>รหัสดูผล</b> แล้วกดปุ่ม "สร้างข้อสอบ"</div></div>
+    <div class="substep"><div class="st">1.5 เก็บลิงก์ที่ได้</div><div class="sd">เมื่อสร้างเสร็จ ระบบแสดง <b>ลิงก์สำหรับนิสิต</b> และ <b>ลิงก์ดูผล</b> พร้อมรหัสชุดสอบ กดปุ่มคัดลอกเก็บไว้</div></div>
+    <div class="tipbox"><b>ไม่ต้องกลัวลืม</b> ถ้าปิดหน้าไปแล้วลืมลิงก์ เปิดหน้า <span class="pagechip">myexams.html</span> (ชุดสอบของฉัน) ใส่รหัสผ่านรวม จะเห็นทุกชุดสอบที่เคยสร้าง พร้อมลิงก์และรหัสครบ</div>
+  </div>
+  <div class="connector">&#8595;</div>
+
+  <!-- STEP 2 -->
+  <div class="step">
+    <div class="step-head"><div class="num">2</div><h3><span class="emoji">&#128247;</span>เตรียม QR Code</h3></div>
+    <p class="intro-line">เปลี่ยน "ลิงก์สำหรับนิสิต" ให้เป็น QR code เพื่อให้นิสิตสแกนง่าย</p>
+    <div class="substep"><div class="st">2.1 เปิดหน้าชุดสอบของฉัน</div><div class="sd">เข้าหน้า <span class="pagechip">myexams.html</span> ใส่รหัสผ่านรวม จะเห็นรายการวิชาที่สร้างไว้</div></div>
+    <div class="substep"><div class="st">2.2 กดแสดง QR แล้วดาวน์โหลด</div><div class="sd">หาวิชาที่ต้องการ กดปุ่ม "แสดง QR Code" ระบบสร้าง QR ให้ กดดาวน์โหลดเป็นรูปเก็บไว้</div></div>
+    <div class="substep"><div class="st">2.3 เตรียมฉายหรือปริ้น</div><div class="sd">เอา QR ใส่สไลด์ฉายหน้าห้อง หรือปริ้นแปะไว้หลายจุดในห้อง เพื่อให้นิสิตสแกนสะดวก</div></div>
+    <div class="tipbox"><b>ทำล่วงหน้าเสมอ</b> เตรียม QR ก่อนวันสอบ อย่าไปสร้างหน้างาน และลองสแกน QR ด้วยมือถือตัวเองดูสัก 1 ครั้งว่าข้อสอบเปิดขึ้นปกติ</div>
+  </div>
+  <div class="connector">&#8595;</div>
+
+  <!-- STEP 3 -->
+  <div class="step">
+    <div class="step-head"><div class="num">3</div><h3><span class="emoji">&#128241;</span>วันสอบ นิสิตทำข้อสอบ</h3></div>
+    <p class="intro-line">นิสิตใช้มือถือตัวเองทำข้อสอบ อาจารย์คุมสอบในห้องตามปกติ</p>
+    <div class="substep"><div class="st">3.1 นิสิตสแกน QR</div><div class="sd">นิสิตเปิดกล้องมือถือสแกน QR ที่ฉายไว้ หน้าข้อสอบจะเปิดในเบราว์เซอร์ ไม่ต้องลงแอปหรือล็อกอิน</div></div>
+    <div class="substep"><div class="st">3.2 ลงชื่อเข้าสอบ</div><div class="sd">นิสิตค้นหาชื่อหรือรหัสตัวเอง (ถ้าอัปโหลดรายชื่อไว้) ระบบเติมข้อมูลให้ ตรวจสอบความถูกต้องแล้วกดเริ่ม</div></div>
+    <div class="substep"><div class="st">3.3 ทำข้อสอบและส่ง</div><div class="sd">เลือกคำตอบทีละข้อ ทำครบแล้วกดส่ง เห็นคะแนนทันที <b>หนึ่งรหัสนิสิตทำได้ครั้งเดียว</b> ผลเข้าระบบอัตโนมัติ</div></div>
+    <div class="tipbox"><b>ถ้าหน้าจอนิสิตถูกล็อก</b> (เพราะสลับแอปเกินกำหนด) อาจารย์เดินไปที่เครื่องนิสิต ใส่รหัสปลดล็อกที่ตั้งไว้ นิสิตจะทำต่อได้ (ดูรายละเอียดในกล่องด้านล่าง)</div>
+  </div>
+  <div class="connector">&#8595;</div>
+
+  <!-- STEP 4 -->
+  <div class="step">
+    <div class="step-head"><div class="num">4</div><h3><span class="emoji">&#128200;</span>ดูผลและดาวน์โหลดคะแนน</h3></div>
+    <p class="intro-line">ดูคะแนนได้ทันทีระหว่างหรือหลังสอบ</p>
+    <div class="substep"><div class="st">4.1 เปิดหน้าดูผล</div><div class="sd">เปิดหน้า <span class="pagechip">dashboard.html</span> ใส่รหัสชุดสอบและรหัสดูผล (หรือกดปุ่ม "เปิด Dashboard" จากหน้าชุดสอบของฉันก็ได้)</div></div>
+    <div class="substep"><div class="st">4.2 ดูคะแนนและสถิติ</div><div class="sd">เห็นรายชื่อทุกคนพร้อมคะแนน คะแนนเฉลี่ย จำนวนคนที่สลับหน้าจอ และใครที่ข้อมูลไม่ตรงทะเบียน กดหัวตารางเพื่อเรียงลำดับ หรือค้นหาชื่อได้</div></div>
+    <div class="substep"><div class="st">4.3 ดาวน์โหลดเป็น Excel</div><div class="sd">กดปุ่ม "ดาวน์โหลด CSV" ได้ไฟล์เปิดใน Excel ได้ทันที (รองรับภาษาไทย) เอาไปกรอกเกรดหรือเก็บหลักฐานต่อได้</div></div>
+    <div class="tipbox"><b>กดรีเฟรชเพื่อดูผลล่าสุด</b> ระหว่างสอบถ้าอยากดูว่าใครส่งแล้วบ้าง กดปุ่มรีเฟรชในหน้า dashboard</div>
+  </div>
+
+  <!-- LOCK -->
+  <div class="highlight">
+    <h3><span class="big-ic">&#128274;</span>ระบบล็อกหน้าจอทำงานยังไง</h3>
+    <p>ระหว่างสอบ ถ้านิสิตสลับไปแอปอื่นหรือย่อหน้าจอ ระบบจะนับไว้และเตือน พอครบจำนวนที่อาจารย์ตั้ง (เช่น 3 ครั้ง) หน้าจอจะถูกล็อกทันที</p>
+    <ul class="steps-mini">
+      <li>นิสิตทำข้อสอบต่อไม่ได้ และปลดล็อกเองไม่ได้</li>
+      <li>ต้องเรียกอาจารย์มาใส่รหัสปลดล็อกที่เครื่องนิสิต</li>
+      <li>เมื่อปลดแล้ว นิสิตทำต่อได้ คำตอบที่ทำไว้ยังอยู่ครบ ตัวนับเริ่มใหม่</li>
+      <li>ทุกครั้งที่สลับจอจะถูกบันทึก อาจารย์เห็นในหน้าผลว่าใครสลับกี่ครั้ง</li>
+    </ul>
+    <p style="margin-top:10px;margin-bottom:0;"><b>พูดตรง ๆ:</b> ระบบช่วยป้องปรามและบันทึกได้ดี แต่กันทุจริตได้ 100% ไม่ได้ ควรมีอาจารย์คุมสอบในห้องตามปกติเสมอ</p>
+  </div>
+
+  <!-- NOTES -->
+  <div class="notes">
+    <h2><span class="dot"></span>ข้อควรรู้ก่อนใช้จริง</h2>
+    <div class="note-item"><div class="ic">&#9201;&#65039;</div><div class="nt"><b>เตรียมล่วงหน้า</b> สร้างข้อสอบและ QR ก่อนวันสอบ ลองสแกนเองสัก 1 รอบว่าข้อสอบขึ้นปกติ</div></div>
+    <div class="note-item"><div class="ic">&#128246;</div><div class="nt"><b>ต้องใช้อินเทอร์เน็ต</b> ทั้งอาจารย์และนิสิตต้องต่อเน็ต (wifi หรือ 4G/5G) ตลอดการสอบ ถ้าห้องสัญญาณไม่ดีควรเตรียมแผนสำรอง</div></div>
+    <div class="note-item"><div class="ic">&#128100;</div><div class="nt"><b>ยังต้องคุมสอบในห้อง</b> ระบบช่วยนับและล็อกได้ แต่ไม่ทดแทนการคุมสอบ ควรเดินดูและเช็กว่าหน้าจอตรงกับตัวนิสิต</div></div>
+    <div class="note-item"><div class="ic">&#128257;</div><div class="nt"><b>ลืมรหัสหรือลิงก์ ดูย้อนหลังได้</b> ทุกชุดสอบดูได้ที่หน้า "ชุดสอบของฉัน" ด้วยรหัสผ่านรวม ไม่ต้องกลัวหาย</div></div>
+    <div class="note-item"><div class="ic">&#128273;</div><div class="nt"><b>เก็บรหัสให้ดี</b> รหัสปลดล็อกและรหัสดูผลไม่ควรให้นิสิตรู้ โดยเฉพาะรหัสปลดล็อกที่ใช้ปลดเครื่อง</div></div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq">
+    <h2><span class="dot"></span>คำถามที่พบบ่อย</h2>
+    <div class="qa"><div class="q">นิสิตต้องโหลดแอปหรือสมัครอะไรไหม</div><div class="a">ไม่ต้อง แค่สแกน QR เปิดในเบราว์เซอร์มือถือได้เลย ไม่ต้องล็อกอิน</div></div>
+    <div class="qa"><div class="q">ถ้านิสิตเน็ตหลุดกลางคัน จะเป็นอะไรไหม</div><div class="a">คำตอบที่ยังไม่กดส่งอาจหาย ควรแนะนำให้นิสิตอยู่ในจุดสัญญาณดีและกดส่งเมื่อทำครบ</div></div>
+    <div class="qa"><div class="q">ข้อสอบแต่ละคนสุ่มไม่เหมือนกันได้ไหม</div><div class="a">เวอร์ชันนี้ทุกคนได้ข้อสอบชุดเดียวกัน ถ้าต้องการสลับข้อหรือสุ่มชุด แจ้งผู้ดูแลเพื่อพัฒนาเพิ่มได้</div></div>
+    <div class="qa"><div class="q">หนึ่งวิชาใส่ได้กี่ข้อ กี่คน</div><div class="a">ข้อสอบใส่ได้หลายสิบข้อ รายชื่อรองรับหลักร้อยคนสบาย เพียงพอสำหรับชั้นเรียนทั่วไป</div></div>
+    <div class="qa"><div class="q">ถ้านิสิตกรอกรหัสผิดหรือไม่มีในรายชื่อ ทำยังไง</div><div class="a">นิสิตกรอกข้อมูลเองได้ ระบบยังให้เข้าสอบได้ และจะทำเครื่องหมายว่า "ไม่ตรงทะเบียน" ให้อาจารย์เห็นในหน้าผล</div></div>
+  </div>
+
+  <div class="foot">
+    <div class="brand">ระบบสอบออนไลน์ด้วย QR Code</div>
+    ภาควิชาพืชสวน คณะเกษตร กำแพงแสน มหาวิทยาลัยเกษตรศาสตร์
+  </div>
+
+</div>
+</body>
+</html>
