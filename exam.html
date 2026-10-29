@@ -235,14 +235,15 @@
 
   <!-- ผล -->
   <section class="screen" id="screenResult">
-    <div class="band"><h1>ส่งคำตอบเรียบร้อย</h1></div>
+    <div class="band"><h1 id="resultHead">กำลังส่งคำตอบ</h1></div>
     <div class="card">
-      <div class="result-score"><div class="done-icon">&#9989;</div><div class="big-msg">ส่งข้อสอบเรียบร้อยแล้ว</div>
+      <div class="result-score"><div class="done-icon" id="resultIcon">&#8987;</div><div class="big-msg" id="resultMsg">กำลังส่งคำตอบ...</div>
         <div id="scoreWrap" style="display:none;margin-top:14px;">
           <div style="font-size:52px;font-weight:800;color:var(--leaf-dark);line-height:1;"><span id="scoreNum">0</span><span style="font-size:22px;color:var(--muted);"> / <span id="scoreTotal">0</span></span></div>
           <div id="scorePct" style="font-size:17px;font-weight:700;margin-top:6px;">0%</div>
         </div>
       </div>
+      <button class="btn" id="retryBtn" style="display:none;" onclick="doSubmit()">ลองส่งอีกครั้ง</button>
     </div>
     <div class="card">
       <h2>สรุปการสอบ</h2>
@@ -271,7 +272,7 @@ function normalize(s){return String(s).toLowerCase().replace(/\s+/g,"");}
 const EXAM_ID = new URLSearchParams(location.search).get("id");
 let QUESTIONS=[], ROSTER=[], rosterById={}, MAX_FLAGS=3;
 let searchMode="id", activeIdx=-1;
-const state={sid:"",name:"",year:"",faculty:"",major:"",inRoster:false,answers:{},flags:0,startTime:null,submitted:false,examActive:false,locked:false};
+const state={sid:"",name:"",year:"",faculty:"",major:"",inRoster:false,answers:{},flags:0,totalFlags:0,startTime:null,submitted:false,submitting:false,examActive:false,locked:false};
 
 async function api(action, payload){
   const res = await fetch(FN_URL,{method:"POST",
@@ -331,7 +332,7 @@ function goReady(){
 function backToSearch(){show("screenStart");window.scrollTo(0,0);}
 
 const USED_KEY="examsys_used";
-function getUsed(){try{return JSON.parse(localStorage.getItem(USED_KEY)||"[]");}catch(e){return[];}}
+function getUsed(){try{const v=JSON.parse(localStorage.getItem(USED_KEY)||"[]");return Array.isArray(v)?v:[];}catch(e){return[];}}
 function markUsed(id){try{const u=getUsed();const k=EXAM_ID+":"+id;if(!u.includes(k)){u.push(k);localStorage.setItem(USED_KEY,JSON.stringify(u));}}catch(e){}}
 function isUsed(id){return getUsed().includes(EXAM_ID+":"+id);}
 
@@ -352,9 +353,15 @@ function pick(qi,ci){state.answers[qi]=ci;
 function updateProgress(){const n=Object.keys(state.answers).length;$("answered").textContent=n;$("barFill").style.width=(n/QUESTIONS.length*100)+"%";}
 
 // ---- ตรวจจับ + ล็อก ----
+let lastFlagAt=0;
 function raiseFlag(){
   if(!state.examActive||state.submitted||state.locked)return;
-  state.flags++;
+  // กัน blur กับ visibilitychange ยิงซ้ำกันเมื่อสลับแอปครั้งเดียว (นับเป็น 1)
+  const now=Date.now();
+  if(now-lastFlagAt<700) return;
+  lastFlagAt=now;
+  state.flags++;          // นับรอบปัจจุบัน (รีเซ็ตเมื่อปลดล็อก)
+  state.totalFlags++;     // นับสะสมทั้งหมด (ไม่รีเซ็ต — ใช้รายงานอาจารย์)
   updateFlagChip();
   if(state.flags>=MAX_FLAGS){ lockScreen(); }
   else {
@@ -362,7 +369,7 @@ function raiseFlag(){
     $("overlay").classList.add("show");
   }
 }
-function updateFlagChip(){const c=$("flagChip");c.textContent="ออกจากจอ "+state.flags+" ครั้ง";c.classList.toggle("hot",state.flags>0);}
+function updateFlagChip(){const c=$("flagChip");c.textContent="ออกจากจอ "+state.totalFlags+" ครั้ง";c.classList.toggle("hot",state.totalFlags>0);}
 function resumeExam(){$("overlay").classList.remove("show");}
 function lockScreen(){state.locked=true;$("overlay").classList.remove("show");$("lockScreen").classList.add("show");}
 async function tryUnlock(){
@@ -380,36 +387,66 @@ async function tryUnlock(){
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")raiseFlag();});
 window.addEventListener("blur",()=>{setTimeout(()=>{if(document.hidden)return;raiseFlag();},50);});
 
-async function submitExam(){
-  if(state.locked){return;}
+// ยืนยันและเข้าหน้าผล (ยังไม่ประกาศว่าสำเร็จ จนกว่าเซิร์ฟเวอร์จะตอบ)
+function submitExam(){
+  if(state.locked||state.submitting||state.submitted){return;}
   const n=Object.keys(state.answers).length;
   if(n<QUESTIONS.length){if(!confirm("ยังเหลืออีก "+(QUESTIONS.length-n)+" ข้อ ต้องการส่งเลยหรือไม่?"))return;}
   else{if(!confirm("ยืนยันการส่งคำตอบ? เมื่อส่งแล้วจะแก้ไม่ได้"))return;}
-  state.submitted=true;state.examActive=false;
-  const secs=Math.round((Date.now()-state.startTime)/1000);
-  const mm=Math.floor(secs/60),ss=secs%60;
+  state.examActive=false;
+  state.submitSecs=Math.round((Date.now()-state.startTime)/1000);
+  const mm=Math.floor(state.submitSecs/60),ss=state.submitSecs%60;
   $("rSid").textContent=state.sid;$("rName").textContent=state.name;
   $("rAns").textContent=n+" / "+QUESTIONS.length+" ข้อ";
-  $("rFlags").textContent=state.flags+" ครั้ง";$("rTime").textContent=mm+" นาที "+ss+" วินาที";
+  $("rFlags").textContent=state.totalFlags+" ครั้ง";$("rTime").textContent=mm+" นาที "+ss+" วินาที";
   show("screenResult");window.scrollTo(0,0);
-  const saveMsg=$("saveStatus");saveMsg.textContent="กำลังบันทึกผลเข้าระบบ...";saveMsg.className="";saveMsg.style.display="block";
-  try{
-    const d=await api("submit",{exam_id:EXAM_ID,sid:state.sid,name:state.name,year:state.year,
-      faculty:state.faculty,major:state.major,in_roster:state.inRoster,answered:n,flags:state.flags,
-      seconds:secs,answers:state.answers});
-    if(d.ok&&d.status==="ok"){
-      markUsed(state.sid);
-      if(d.score!=null){const pct=Math.round(d.score/d.total*100);
-        $("scoreNum").textContent=d.score;$("scoreTotal").textContent=d.total;$("scorePct").textContent=pct+"%";
-        $("scoreWrap").style.display="block";$("rScore").textContent=d.score+" / "+d.total+" ("+pct+"%)";$("rScoreRow").style.display="flex";}
-      saveMsg.textContent="✓ บันทึกผลเข้าระบบเรียบร้อยแล้ว";saveMsg.className="save-ok";
-    } else if(d.status==="duplicate"){
-      markUsed(state.sid);
-      saveMsg.textContent="⚠ รหัสนี้เคยส่งข้อสอบไปแล้ว ระบบเก็บเฉพาะครั้งแรก";saveMsg.className="save-fail";
-    } else { saveMsg.textContent="⚠ บันทึกไม่สำเร็จ กรุณาแจ้งอาจารย์";saveMsg.className="save-fail"; }
-  }catch(e){ saveMsg.textContent="⚠ บันทึกไม่สำเร็จ (เครือข่ายมีปัญหา) กรุณาแจ้งอาจารย์";saveMsg.className="save-fail"; }
+  doSubmit();
 }
-window.addEventListener("beforeunload",e=>{if(state.examActive&&!state.submitted){e.preventDefault();e.returnValue="";}});
+
+// ยิง API จริง (เรียกซ้ำได้จากปุ่ม retry) — กันกดซ้ำด้วย submitting
+async function doSubmit(){
+  if(state.submitting||state.submitted){return;}
+  state.submitting=true;
+  const n=Object.keys(state.answers).length;
+  $("retryBtn").style.display="none";
+  $("resultHead").textContent="กำลังส่งคำตอบ";
+  $("resultIcon").innerHTML="&#8987;";
+  $("resultMsg").textContent="กำลังส่งคำตอบ...";
+  const saveMsg=$("saveStatus");saveMsg.textContent="กำลังบันทึกผลเข้าระบบ...";saveMsg.className="";saveMsg.style.display="block";
+  let d=null, netErr=false;
+  try{
+    d=await api("submit",{exam_id:EXAM_ID,sid:state.sid,name:state.name,year:state.year,
+      faculty:state.faculty,major:state.major,in_roster:state.inRoster,answered:n,flags:state.totalFlags,
+      seconds:state.submitSecs,answers:state.answers});
+  }catch(e){ netErr=true; }
+  state.submitting=false;
+
+  if(!netErr && d && d.ok && d.status==="ok"){
+    state.submitted=true; markUsed(state.sid);
+    $("resultHead").textContent="ส่งคำตอบเรียบร้อย";
+    $("resultIcon").innerHTML="&#9989;";
+    $("resultMsg").textContent="ส่งข้อสอบเรียบร้อยแล้ว";
+    if(d.score!=null){const pct=Math.round(d.score/d.total*100);
+      $("scoreNum").textContent=d.score;$("scoreTotal").textContent=d.total;$("scorePct").textContent=pct+"%";
+      $("scoreWrap").style.display="block";$("rScore").textContent=d.score+" / "+d.total+" ("+pct+"%)";$("rScoreRow").style.display="flex";}
+    saveMsg.textContent="✓ บันทึกผลเข้าระบบเรียบร้อยแล้ว";saveMsg.className="save-ok";
+  } else if(!netErr && d && d.status==="duplicate"){
+    state.submitted=true; markUsed(state.sid);
+    $("resultHead").textContent="ส่งคำตอบแล้ว";
+    $("resultIcon").innerHTML="&#9989;";
+    $("resultMsg").textContent="รหัสนี้เคยส่งข้อสอบไปแล้ว";
+    saveMsg.textContent="⚠ รหัสนี้เคยส่งข้อสอบไปแล้ว ระบบเก็บเฉพาะครั้งแรก";saveMsg.className="save-fail";
+  } else {
+    // ล้มเหลว (เครือข่ายหรือเซิร์ฟเวอร์) — ยังไม่ถือว่าส่งสำเร็จ ให้ลองใหม่ได้
+    $("resultHead").textContent="ส่งคำตอบไม่สำเร็จ";
+    $("resultIcon").innerHTML="&#9888;&#65039;";
+    $("resultMsg").textContent="ยังส่งคำตอบไม่สำเร็จ";
+    saveMsg.textContent=netErr ? "⚠ เครือข่ายมีปัญหา คำตอบยังไม่ถูกบันทึก กรุณากดลองส่งอีกครั้ง" : "⚠ บันทึกไม่สำเร็จ กรุณากดลองส่งอีกครั้ง หรือแจ้งอาจารย์";
+    saveMsg.className="save-fail";
+    $("retryBtn").style.display="block";
+  }
+}
+window.addEventListener("beforeunload",e=>{if(!state.submitted&&(state.examActive||state.submitting||$("retryBtn").style.display==="block")){e.preventDefault();e.returnValue="";}});
 
 $("searchInput").addEventListener("input",doSearch);
 $("searchInput").addEventListener("keydown",e=>{

@@ -67,7 +67,7 @@
     <div class="card">
       <div class="toolbar">
         <input type="text" id="search" placeholder="ค้นหาชื่อหรือรหัส..." oninput="renderTable()">
-        <button class="btn ghost" onclick="loadData()">รีเฟรช</button>
+        <button class="btn ghost" onclick="doRefresh(this)">รีเฟรช</button>
         <button class="btn ghost" onclick="exportCSV()">ดาวน์โหลด CSV</button>
         <button class="btn ghost" onclick="logout()">ออกจากระบบ</button>
       </div>
@@ -115,20 +115,25 @@ async function login(){
   if(!code){err.textContent="กรุณาใส่รหัสเข้า Dashboard";return;}
   err.textContent="กำลังเข้าสู่ระบบ...";
   EXAM_ID=id;DASH_CODE=code;
-  const ok=await loadData();
-  if(ok){err.textContent="";$("loginCard").classList.add("hidden");$("dashCard").classList.remove("hidden");}
-  else{err.textContent="รหัสชุดสอบหรือรหัส Dashboard ไม่ถูกต้อง";}
+  const r=await loadData();
+  if(r.ok){err.textContent="";$("loginCard").classList.add("hidden");$("dashCard").classList.remove("hidden");}
+  else if(r.reason==="auth"){err.textContent="รหัสชุดสอบหรือรหัส Dashboard ไม่ถูกต้อง";}
+  else{err.textContent="เชื่อมต่อไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่";}
 }
 function logout(){EXAM_ID="";DASH_CODE="";data=[];$("dashCard").classList.add("hidden");$("loginCard").classList.remove("hidden");$("dashCode").value="";}
+async function doRefresh(btn){const o=btn.textContent;btn.textContent="กำลังรีเฟรช...";btn.disabled=true;
+  const r=await loadData();btn.disabled=false;btn.textContent=o;
+  if(!r.ok) alert(r.reason==="network"?"เชื่อมต่อไม่สำเร็จ ข้อมูลที่แสดงเป็นข้อมูลล่าสุดก่อนหน้า":"รีเฟรชไม่สำเร็จ ลองใหม่อีกครั้ง");}
 
 async function loadData(){
   try{
     const{status,body}=await api("dashboard",{exam_id:EXAM_ID,code:DASH_CODE});
-    if(status!==200||!body.ok)return false;
+    if(status===401||status===404) return {ok:false,reason:"auth"};
+    if(status!==200||!body.ok) return {ok:false,reason:"server"};
     data=body.submissions||[];TOTAL_Q=body.total_q||0;
     $("bandSub").textContent=body.title+(body.subject_code?" · "+body.subject_code:"");
-    renderStats();renderTable();return true;
-  }catch(e){return false;}
+    renderStats();renderTable();return {ok:true};
+  }catch(e){return {ok:false,reason:"network"};}
 }
 function renderStats(){
   const total=data.length;
@@ -168,7 +173,10 @@ function exportCSV(){
   const head=["รหัสนิสิต","ชื่อ-นามสกุล","ชั้นปี","คณะ","สาขา","คะแนน","เต็ม","ตอบ","ออกจากจอ","เวลา(วินาที)","ตรงทะเบียน","ส่งเมื่อ"];
   const lines=[head.join(",")];
   data.forEach(r=>{const row=[r.sid,r.name,r.year,r.faculty,r.major,(r.score==null?"":r.score),r.total,r.answered,r.flags,r.seconds,(r.in_roster?"ตรง":"ไม่ตรง"),r.submitted_at];
-    lines.push(row.map(v=>{const s=String(v==null?"":v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(","));});
+    lines.push(row.map(v=>{let s=String(v==null?"":v);
+      // กัน formula injection: ค่าที่ขึ้นต้นด้วย = + - @ tab นำหน้าด้วย ' (F19)
+      if(/^[=+\-@\t\r]/.test(s)) s="'"+s;
+      return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(","));});
   const csv="﻿"+lines.join("\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
   const url=URL.createObjectURL(blob);const a=document.createElement("a");

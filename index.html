@@ -159,6 +159,8 @@ const $ = id => document.getElementById(id);
 
 let questions = [];
 let roster = [];
+let qError = false;   // ไฟล์ข้อสอบมีข้อผิดหรือไม่
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 
 // แปลงเฉลย ก/ข/ค/ง หรือ 1-4 เป็น index 0-3
 function parseAnswer(v){
@@ -189,12 +191,18 @@ $("qFile").addEventListener("change", e=>{
         if(ans===null){ bad.push("ข้อ "+rowNo+" เฉลยไม่ถูกต้อง (ต้องเป็น ก/ข/ค/ง)"); continue; }
         questions.push({q, choices, answer:ans});
       }
-      $("qBox").classList.add("ok");
-      $("qBoxTitle").textContent = "อัปโหลดแล้ว: "+questions.length+" ข้อ";
-      let msg = "อ่านข้อสอบได้ "+questions.length+" ข้อ";
-      if(bad.length) msg += " | ข้ามไป "+bad.length+" ข้อ: "+bad.slice(0,3).join(", ")+(bad.length>3?"...":"");
-      $("qPreview").textContent = msg;
-    }catch(err){ $("qPreview").textContent = "อ่านไฟล์ไม่สำเร็จ: "+err.message; }
+      qError = bad.length>0;   // มีข้อผิด = บล็อกการสร้างจนกว่าจะแก้
+      if(bad.length>0){
+        questions = [];        // ไม่ให้ใช้ข้อสอบที่มีข้อผิดปน
+        $("qBox").classList.remove("ok");
+        $("qBoxTitle").textContent = "พบข้อผิดพลาด "+bad.length+" ข้อ กรุณาแก้ไฟล์แล้วอัปโหลดใหม่";
+        $("qPreview").innerHTML = "<b style='color:#c65d3b'>ต้องแก้ก่อนสร้างข้อสอบ:</b><br>"+bad.map(esc).join("<br>");
+      } else {
+        $("qBox").classList.add("ok");
+        $("qBoxTitle").textContent = "อัปโหลดแล้ว: "+questions.length+" ข้อ";
+        $("qPreview").textContent = "อ่านข้อสอบได้ "+questions.length+" ข้อ ครบถ้วน";
+      }
+    }catch(err){ questions=[]; qError=true; $("qPreview").textContent = "อ่านไฟล์ไม่สำเร็จ: "+err.message; }
   };
   rd.readAsArrayBuffer(f);
 });
@@ -231,6 +239,8 @@ $("rFile").addEventListener("change", e=>{
       // ปีการศึกษาปัจจุบัน (พ.ศ. 2 หลักท้าย) ใช้คำนวณชั้นปีจากรหัส
       const curYY = ((new Date().getFullYear()+543) % 100);
       let dropped = 0;
+      const seenIds = new Set();   // กันรหัสซ้ำ (F15)
+      const dupIds = [];
       for(let i=startRow;i<rows.length;i++){
         const r = rows[i]; if(!r) continue;
         const get = c => (c>=0 && r[c]!=null) ? String(r[c]).trim() : "";
@@ -241,9 +251,16 @@ $("rFile").addEventListener("change", e=>{
           for(let c=0;c<r.length;c++){ const v=String(r[c]==null?"":r[c]).trim(); if(/^\d{6,}$/.test(v)){sid=v;break;} }
         }
         if(!sid) continue;
-        // ตัดคนที่ถอนรายวิชา (Drop)
-        const status = get(colStatus);
-        if(/drop|ถอน|w\b|ติด\s*w/i.test(status)){ dropped++; continue; }
+        // ตัดคนที่ถอนรายวิชา — เทียบเฉพาะสถานะถอนจริง ไม่ใช่ตัว w ลอย ๆ
+        // (กัน New, review, Follow, Not dropped ถูกตัดผิด)
+        const status = get(colStatus).toLowerCase().replace(/\s+/g,"");
+        const isDropped = status!=="" && (
+          status.includes("ถอน") ||
+          status.includes("dropติดw") || status.includes("ติดw") ||
+          status==="drop" || status==="w" || status==="withdrawn" || status==="withdraw" ||
+          /^drop\b/.test(get(colStatus).toLowerCase())
+        );
+        if(isDropped){ dropped++; continue; }
         // ชื่อไทย (ถ้าไฟล์มีทั้งไทย/อังกฤษ เลือกไทย)
         let name = get(colName);
         if(!name || !/[ก-๙]/.test(name)){
@@ -257,12 +274,15 @@ $("rFile").addEventListener("change", e=>{
           const y = curYY - pre + 1;
           yr = (y>=1&&y<=8) ? y : "";
         }
+        if(seenIds.has(sid)){ dupIds.push(sid); continue; }   // ข้ามรหัสซ้ำ (F15)
+        seenIds.add(sid);
         roster.push({ id:sid, name:name||sid, year:yr, faculty:get(colFac), major:get(colMajor) });
       }
       $("rBox").classList.add("ok");
       $("rBoxTitle").textContent = "อัปโหลดแล้ว: "+roster.length+" คน";
       let msg = roster.length ? ("อ่านรายชื่อได้ "+roster.length+" คน | ตัวอย่าง: "+roster[0].name+" ("+roster[0].id+", ปี "+roster[0].year+")") : "ไม่พบรายชื่อ ตรวจสอบคอลัมน์รหัสนิสิต";
       if(dropped>0) msg += " | ตัดผู้ถอนรายวิชา "+dropped+" คนออกแล้ว";
+      if(dupIds.length) msg += " | พบรหัสซ้ำ "+dupIds.length+" รายการ (เก็บรายการแรก)";
       $("rPreview").textContent = msg;
     }catch(err){ $("rPreview").textContent = "อ่านไฟล์ไม่สำเร็จ: "+err.message; }
   };
@@ -275,9 +295,14 @@ async function createExam(){
   const unlockCode = $("unlockCode").value.trim();
   const dashCode = $("dashCode").value.trim();
   if(!title){ err.textContent="กรุณากรอกชื่อวิชา"; return; }
+  if(qError){ err.textContent="ไฟล์ข้อสอบมีข้อผิดพลาด กรุณาแก้แล้วอัปโหลดใหม่ก่อนสร้าง"; return; }
   if(questions.length===0){ err.textContent="กรุณาอัปโหลดไฟล์ข้อสอบที่มีข้อมูลถูกต้อง"; return; }
   if(!unlockCode){ err.textContent="กรุณาตั้งรหัสปลดล็อก"; return; }
   if(!dashCode){ err.textContent="กรุณาตั้งรหัสเข้า Dashboard"; return; }
+  // clamp จำนวนครั้งล็อก 1-20 (F21)
+  let maxFlags = parseInt($("maxFlags").value);
+  if(!Number.isInteger(maxFlags) || maxFlags<1) maxFlags=3;
+  if(maxFlags>20) maxFlags=20;
 
   const btn = $("submitBtn");
   btn.disabled=true; btn.textContent="กำลังสร้าง...";
@@ -287,7 +312,7 @@ async function createExam(){
       headers:{"Content-Type":"application/json","apikey":PUB_KEY,"Authorization":"Bearer "+PUB_KEY},
       body: JSON.stringify({ action:"create_exam", exam:{
         title, subject_code:$("subjectCode").value.trim(), teacher_email:$("email").value.trim(),
-        questions, roster, max_flags:parseInt($("maxFlags").value)||3,
+        questions, roster, max_flags:maxFlags,
         unlock_code:unlockCode, dashboard_code:dashCode
       }})
     });
